@@ -3,20 +3,43 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setMessage("");
+    setLoading(true);
 
-    setMessage(
-      "Login form validated. Secure sign-in will work after the authentication API is connected."
-    );
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setMessage(data.error || "Login failed.");
+        return;
+      }
+
+      router.push("/profile");
+      router.refresh();
+    } catch {
+      setMessage("Unable to contact the server. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -34,18 +57,13 @@ export default function LoginPage() {
                 Keep building connections that move you forward.
               </h1>
               <p className="mt-5 leading-7 text-slate-200">
-                Return to GradBridge to explore professional journeys and
-                discover people who can help you grow.
+                Discover professional journeys and connect with people who
+                can help you grow.
               </p>
             </div>
-
-            <div className="rounded-2xl border border-white/20 bg-white/10 p-5">
-              <p className="font-semibold">Reconnect with your community.</p>
-              <p className="mt-2 text-sm leading-6 text-slate-300">
-                Your next conversation could help you discover a new career
-                path or opportunity.
-              </p>
-            </div>
+            <p className="text-sm text-slate-300">
+              Reconnect with your community.
+            </p>
           </section>
 
           <section className="p-6 sm:p-10">
@@ -56,8 +74,8 @@ export default function LoginPage() {
             <h2 className="mt-6 text-3xl font-bold text-slate-950">
               Welcome back
             </h2>
-            <p className="mt-2 text-sm leading-6 text-slate-700">
-              Log in to continue to your GradBridge account.
+            <p className="mt-2 text-sm text-slate-700">
+              Log in to continue to your account.
             </p>
 
             <form onSubmit={handleSubmit} className="mt-8 space-y-5">
@@ -95,14 +113,15 @@ export default function LoginPage() {
 
               <button
                 type="submit"
-                className="w-full rounded-xl bg-blue-800 px-5 py-3.5 font-semibold text-white transition hover:bg-blue-900"
+                disabled={loading}
+                className="w-full rounded-xl bg-blue-800 px-5 py-3.5 font-semibold text-white transition hover:bg-blue-900 disabled:opacity-60"
               >
-                Log in
+                {loading ? "Logging in..." : "Log in"}
               </button>
             </form>
 
             {message && (
-              <p role="status" className="mt-4 rounded-xl bg-blue-50 p-4 text-sm leading-6 text-blue-950">
+              <p role="alert" className="mt-4 rounded-xl bg-red-50 p-4 text-sm leading-6 text-red-900">
                 {message}
               </p>
             )}

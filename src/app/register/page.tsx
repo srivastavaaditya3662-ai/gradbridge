@@ -3,27 +3,54 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
 export default function RegisterPage() {
+  const router = useRouter();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("Student");
+  const [graduationYear, setGraduationYear] = useState(
+    String(new Date().getFullYear() + 4)
+  );
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setMessage("");
+    setLoading(true);
 
-    if (password.length < 8) {
-      setMessage("Password must contain at least 8 characters.");
-      return;
+    try {
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName,
+          email,
+          password,
+          role,
+          graduationYear: Number(graduationYear),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setMessage(data.error || "Registration failed.");
+        return;
+      }
+
+      router.push("/profile");
+      router.refresh();
+    } catch {
+      setMessage("Unable to contact the server. Please try again.");
+    } finally {
+      setLoading(false);
     }
-
-    setMessage(
-      "Registration form validated. Account creation will be enabled when the database and authentication API are connected."
-    );
   }
 
   return (
@@ -45,14 +72,9 @@ export default function RegisterPage() {
                 meaningful professional relationships through GradBridge.
               </p>
             </div>
-
-            <div className="rounded-2xl border border-white/20 bg-white/10 p-5">
-              <p className="font-semibold">One community. More possibilities.</p>
-              <p className="mt-2 text-sm leading-6 text-slate-300">
-                Explore career paths, connect with graduates, and take the
-                next step in your professional journey.
-              </p>
-            </div>
+            <p className="text-sm leading-6 text-slate-300">
+              One community. More possibilities.
+            </p>
           </section>
 
           <section className="p-6 sm:p-10">
@@ -63,8 +85,8 @@ export default function RegisterPage() {
             <h2 className="mt-6 text-3xl font-bold text-slate-950">
               Create your account
             </h2>
-            <p className="mt-2 text-sm leading-6 text-slate-700">
-              Join the GradBridge student and alumni community.
+            <p className="mt-2 text-sm text-slate-700">
+              Join the student and alumni community.
             </p>
 
             <form onSubmit={handleSubmit} className="mt-7 space-y-5">
@@ -76,6 +98,8 @@ export default function RegisterPage() {
                   id="fullName"
                   autoComplete="name"
                   required
+                  minLength={2}
+                  maxLength={100}
                   value={fullName}
                   onChange={(event) => setFullName(event.target.value)}
                   placeholder="Enter your full name"
@@ -85,7 +109,7 @@ export default function RegisterPage() {
 
               <div>
                 <label htmlFor="email" className="mb-2 block text-sm font-semibold text-slate-900">
-                  University or personal email
+                  Email address
                 </label>
                 <input
                   id="email"
@@ -108,6 +132,7 @@ export default function RegisterPage() {
                   type="password"
                   autoComplete="new-password"
                   minLength={8}
+                  maxLength={72}
                   required
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
@@ -118,7 +143,7 @@ export default function RegisterPage() {
 
               <div>
                 <label htmlFor="role" className="mb-2 block text-sm font-semibold text-slate-900">
-                  I am a
+                  Account type
                 </label>
                 <select
                   id="role"
@@ -131,16 +156,37 @@ export default function RegisterPage() {
                 </select>
               </div>
 
+              <div>
+                <label htmlFor="graduationYear" className="mb-2 block text-sm font-semibold text-slate-900">
+                  Graduation year
+                </label>
+                <select
+                  id="graduationYear"
+                  value={graduationYear}
+                  onChange={(event) => setGraduationYear(event.target.value)}
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-black outline-none focus:border-blue-700"
+                >
+                  {Array.from({ length: 15 }, (_, index) => 2024 + index).map(
+                    (year) => (
+                      <option key={year} value={String(year)}>
+                        {year}
+                      </option>
+                    )
+                  )}
+                </select>
+              </div>
+
               <button
                 type="submit"
-                className="w-full rounded-xl bg-blue-800 px-5 py-3.5 font-semibold text-white transition hover:bg-blue-900"
+                disabled={loading}
+                className="w-full rounded-xl bg-blue-800 px-5 py-3.5 font-semibold text-white transition hover:bg-blue-900 disabled:opacity-60"
               >
-                Create account
+                {loading ? "Creating account..." : "Create account"}
               </button>
             </form>
 
             {message && (
-              <p role="status" className="mt-4 rounded-xl bg-blue-50 p-4 text-sm leading-6 text-blue-950">
+              <p role="alert" className="mt-4 rounded-xl bg-red-50 p-4 text-sm leading-6 text-red-900">
                 {message}
               </p>
             )}

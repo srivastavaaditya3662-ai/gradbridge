@@ -8,22 +8,32 @@ import Footer from "@/components/layout/Footer";
 
 export default function ProfilePage() {
   const [fullName, setFullName] = useState("Your Name");
+  const [accountType, setAccountType] = useState("Student");
   const [graduationYear, setGraduationYear] = useState("2027");
-  const [role, setRole] = useState("Student");
   const [jobTitle, setJobTitle] = useState("");
   const [company, setCompany] = useState("");
   const [industry, setIndustry] = useState("Technology");
   const [skills, setSkills] = useState("Python, C++, Machine Learning");
   const [bio, setBio] = useState("");
+  const [careerGoals, setCareerGoals] = useState("");
   const [message, setMessage] = useState("");
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     setMessage(
-      "Profile validated. Changes are currently temporary and will be saved permanently once the database API is connected."
+      "Profile form completed. Permanent saving will be enabled when the database API is connected."
     );
   }
+
+  const initials =
+    fullName
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0].toUpperCase())
+      .join("") || "U";
 
   return (
     <>
@@ -40,7 +50,9 @@ export default function ProfilePage() {
                 My profile
               </h1>
               <p className="mt-2 text-slate-700">
-                Keep your academic and professional information up to date.
+                {accountType === "Student"
+                  ? "Share your interests, skills, and career goals."
+                  : "Showcase your professional experience and career journey."}
               </p>
             </div>
 
@@ -55,18 +67,24 @@ export default function ProfilePage() {
           <div className="mt-8 grid gap-6 lg:grid-cols-[280px_1fr]">
             <aside className="h-fit rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-blue-100 text-2xl font-bold text-blue-900">
-                {fullName.trim()
-                  .split(/\s+/)
-                  .filter(Boolean)
-                  .slice(0, 2)
-                  .map((part) => part[0]?.toUpperCase())
-                  .join("") || "U"}
+                {initials}
               </div>
 
               <h2 className="mt-4 text-xl font-bold text-slate-950">
                 {fullName || "Your Name"}
               </h2>
-              <p className="mt-1 text-sm text-slate-700">{role}</p>
+              <p className="mt-1 text-sm text-slate-700">{accountType}</p>
+
+              {accountType === "Alumni" && (
+                <div className="mt-4 rounded-xl bg-blue-50 p-3">
+                  <p className="text-sm font-semibold text-blue-950">
+                    {jobTitle || "Job title not added"}
+                  </p>
+                  <p className="mt-1 text-sm text-blue-800">
+                    {company || "Company not added"}
+                  </p>
+                </div>
+              )}
 
               <div className="mt-6 border-t border-slate-200 pt-5">
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-600">
@@ -77,12 +95,14 @@ export default function ProfilePage() {
                   <li>{graduationYear ? "✓" : "○"} Graduation year</li>
                   <li>{skills.trim() ? "✓" : "○"} Skills</li>
                   <li>{bio.trim() ? "✓" : "○"} About you</li>
+                  {accountType === "Student" && (
+                    <li>{careerGoals.trim() ? "✓" : "○"} Career goals</li>
+                  )}
                 </ul>
               </div>
 
               <p className="mt-6 rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-900">
-                Demo mode: this page does not yet load or save a real user
-                account.
+                Demo mode: profile information is not yet saved to a database.
               </p>
             </aside>
 
@@ -91,7 +111,7 @@ export default function ProfilePage() {
                 Profile information
               </h2>
               <p className="mt-2 text-sm text-slate-700">
-                Enter the details you want displayed on your profile.
+                Complete the fields relevant to your current role.
               </p>
 
               <form onSubmit={handleSubmit} className="mt-7 space-y-6">
@@ -110,17 +130,20 @@ export default function ProfilePage() {
                   </div>
 
                   <div>
-                    <label htmlFor="role" className="mb-2 block text-sm font-semibold text-slate-900">
+                    <label htmlFor="accountType" className="mb-2 block text-sm font-semibold text-slate-900">
                       Account type
                     </label>
                     <select
-                      id="role"
-                      value={role}
-                      onChange={(event) => setRole(event.target.value)}
+                      id="accountType"
+                      value={accountType}
+                      onChange={(event) => {
+                        setAccountType(event.target.value);
+                        setMessage("");
+                      }}
                       className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-black outline-none focus:border-blue-700"
                     >
-                      <option>Student</option>
-                      <option>Alumni</option>
+                      <option value="Student">Student</option>
+                      <option value="Alumni">Alumni</option>
                     </select>
                   </div>
 
@@ -144,52 +167,58 @@ export default function ProfilePage() {
                     </select>
                   </div>
 
-                  <div>
-                    <label htmlFor="jobTitle" className="mb-2 block text-sm font-semibold text-slate-900">
-                      Current job title
-                    </label>
-                    <input
-                      id="jobTitle"
-                      value={jobTitle}
-                      onChange={(event) => setJobTitle(event.target.value)}
-                      placeholder="e.g. Software Engineer"
-                      className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-black placeholder:text-slate-500 outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
-                    />
-                  </div>
+                  {accountType === "Alumni" && (
+                    <>
+                      <div>
+                        <label htmlFor="jobTitle" className="mb-2 block text-sm font-semibold text-slate-900">
+                          Current job title
+                        </label>
+                        <input
+                          id="jobTitle"
+                          required
+                          value={jobTitle}
+                          onChange={(event) => setJobTitle(event.target.value)}
+                          placeholder="e.g. Software Engineer"
+                          className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-black placeholder:text-slate-500 outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
+                        />
+                      </div>
 
-                  <div>
-                    <label htmlFor="company" className="mb-2 block text-sm font-semibold text-slate-900">
-                      Company
-                    </label>
-                    <input
-                      id="company"
-                      value={company}
-                      onChange={(event) => setCompany(event.target.value)}
-                      placeholder="e.g. Microsoft"
-                      className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-black placeholder:text-slate-500 outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
-                    />
-                  </div>
+                      <div>
+                        <label htmlFor="company" className="mb-2 block text-sm font-semibold text-slate-900">
+                          Current company
+                        </label>
+                        <input
+                          id="company"
+                          required
+                          value={company}
+                          onChange={(event) => setCompany(event.target.value)}
+                          placeholder="e.g. Microsoft"
+                          className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-black placeholder:text-slate-500 outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
+                        />
+                      </div>
 
-                  <div>
-                    <label htmlFor="industry" className="mb-2 block text-sm font-semibold text-slate-900">
-                      Industry
-                    </label>
-                    <select
-                      id="industry"
-                      value={industry}
-                      onChange={(event) => setIndustry(event.target.value)}
-                      className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-black outline-none focus:border-blue-700"
-                    >
-                      <option>Technology</option>
-                      <option>Consulting</option>
-                      <option>Cloud Computing</option>
-                      <option>Finance</option>
-                      <option>Healthcare</option>
-                      <option>Education</option>
-                      <option>Marketing</option>
-                      <option>Other</option>
-                    </select>
-                  </div>
+                      <div className="sm:col-span-2">
+                        <label htmlFor="industry" className="mb-2 block text-sm font-semibold text-slate-900">
+                          Industry
+                        </label>
+                        <select
+                          id="industry"
+                          value={industry}
+                          onChange={(event) => setIndustry(event.target.value)}
+                          className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-black outline-none focus:border-blue-700"
+                        >
+                          <option>Technology</option>
+                          <option>Consulting</option>
+                          <option>Cloud Computing</option>
+                          <option>Finance</option>
+                          <option>Healthcare</option>
+                          <option>Education</option>
+                          <option>Marketing</option>
+                          <option>Other</option>
+                        </select>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 <div>
@@ -214,17 +243,38 @@ export default function ProfilePage() {
                   </label>
                   <textarea
                     id="bio"
-                    rows={5}
+                    rows={4}
                     maxLength={500}
                     value={bio}
                     onChange={(event) => setBio(event.target.value)}
-                    placeholder="Describe your interests, experience, projects, or career goals..."
+                    placeholder={
+                      accountType === "Student"
+                        ? "Describe your interests, projects, and what you are learning..."
+                        : "Describe your experience and professional journey..."
+                    }
                     className="w-full resize-y rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm leading-6 text-black placeholder:text-slate-500 outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
                   />
                   <p className="mt-2 text-right text-xs text-slate-600">
                     {bio.length}/500 characters
                   </p>
                 </div>
+
+                {accountType === "Student" && (
+                  <div>
+                    <label htmlFor="careerGoals" className="mb-2 block text-sm font-semibold text-slate-900">
+                      Career goals
+                    </label>
+                    <textarea
+                      id="careerGoals"
+                      rows={3}
+                      maxLength={300}
+                      value={careerGoals}
+                      onChange={(event) => setCareerGoals(event.target.value)}
+                      placeholder="e.g. I want to pursue a career in AI/ML and learn from industry professionals."
+                      className="w-full resize-y rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm leading-6 text-black placeholder:text-slate-500 outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
+                    />
+                  </div>
+                )}
 
                 <button
                   type="submit"
