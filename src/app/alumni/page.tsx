@@ -16,7 +16,7 @@ const alumni = [
     year: "2023",
     skills: ["Python", "Azure", "AI/ML"],
     initials: "AS",
-    color: "bg-blue-100 text-blue-700",
+    color: "bg-blue-100 text-blue-800",
   },
   {
     id: "2",
@@ -27,7 +27,7 @@ const alumni = [
     year: "2022",
     skills: ["Python", "SQL", "Machine Learning"],
     initials: "PV",
-    color: "bg-purple-100 text-purple-700",
+    color: "bg-purple-100 text-purple-800",
   },
   {
     id: "3",
@@ -38,7 +38,7 @@ const alumni = [
     year: "2024",
     skills: ["React", "JavaScript", "CSS"],
     initials: "RG",
-    color: "bg-orange-100 text-orange-700",
+    color: "bg-orange-100 text-orange-800",
   },
   {
     id: "4",
@@ -49,7 +49,7 @@ const alumni = [
     year: "2022",
     skills: ["Excel", "SQL", "Power BI"],
     initials: "SS",
-    color: "bg-pink-100 text-pink-700",
+    color: "bg-pink-100 text-pink-800",
   },
   {
     id: "5",
@@ -60,7 +60,7 @@ const alumni = [
     year: "2023",
     skills: ["AWS", "Docker", "Linux"],
     initials: "KM",
-    color: "bg-green-100 text-green-700",
+    color: "bg-green-100 text-green-800",
   },
   {
     id: "6",
@@ -71,17 +71,45 @@ const alumni = [
     year: "2024",
     skills: ["Python", "TensorFlow", "AI/ML"],
     initials: "AK",
-    color: "bg-indigo-100 text-indigo-700",
+    color: "bg-indigo-100 text-indigo-800",
   },
+];
+
+const companies = [
+  "Microsoft",
+  "Amazon",
+  "Adobe",
+  "Deloitte",
+  "Accenture",
+  "Google",
+];
+
+const skills = [
+  "Python",
+  "Azure",
+  "AI/ML",
+  "SQL",
+  "Machine Learning",
+  "React",
+  "JavaScript",
+  "CSS",
+  "Excel",
+  "Power BI",
+  "AWS",
+  "Docker",
+  "Linux",
+  "TensorFlow",
 ];
 
 export default function AlumniDirectory() {
   const [search, setSearch] = useState("");
-  const [industry, setIndustry] = useState("All industries");
-  const [year, setYear] = useState("All years");
+  const [company, setCompany] = useState("");
+  const [skill, setSkill] = useState("");
+  const [industry, setIndustry] = useState("");
+  const [year, setYear] = useState("");
 
   const filteredAlumni = useMemo(() => {
-    const query = search.toLowerCase().trim();
+    const query = search.trim().toLowerCase();
 
     return alumni.filter((person) => {
       const matchesSearch =
@@ -89,18 +117,31 @@ export default function AlumniDirectory() {
         person.name.toLowerCase().includes(query) ||
         person.role.toLowerCase().includes(query) ||
         person.company.toLowerCase().includes(query) ||
-        person.skills.some((skill) =>
-          skill.toLowerCase().includes(query)
-        );
+        person.industry.toLowerCase().includes(query) ||
+        person.skills.some((item) => item.toLowerCase().includes(query));
 
-      const matchesIndustry =
-        industry === "All industries" || person.industry === industry;
+      const matchesCompany = !company || person.company === company;
+      const matchesSkill = !skill || person.skills.includes(skill);
+      const matchesIndustry = !industry || person.industry === industry;
+      const matchesYear = !year || person.year === year;
 
-      const matchesYear = year === "All years" || person.year === year;
-
-      return matchesSearch && matchesIndustry && matchesYear;
+      return (
+        matchesSearch &&
+        matchesCompany &&
+        matchesSkill &&
+        matchesIndustry &&
+        matchesYear
+      );
     });
-  }, [search, industry, year]);
+  }, [search, company, skill, industry, year]);
+
+  function clearFilters() {
+    setSearch("");
+    setCompany("");
+    setSkill("");
+    setIndustry("");
+    setYear("");
+  }
 
   return (
     <>
@@ -117,115 +158,153 @@ export default function AlumniDirectory() {
               Find alumni. Build connections. Grow your career.
             </h1>
 
-            <p className="mt-5 max-w-2xl text-base leading-7 text-slate-300 md:text-lg">
-              Explore alumni careers, discover industry opportunities, and
-              connect with graduates who can guide your next step.
+            <p className="mt-5 max-w-2xl text-base leading-7 text-slate-200 md:text-lg">
+              Discover graduates, explore career paths, and connect with
+              professionals who can guide your next step.
             </p>
 
-            <div className="mt-8 flex flex-wrap gap-4 text-sm text-slate-200">
-              <span className="rounded-full border border-white/20 px-4 py-2">
+            <div className="mt-8 flex flex-wrap gap-3 text-sm text-white">
+              <span className="rounded-full border border-white/30 px-4 py-2">
                 {alumni.length} sample alumni
               </span>
-              <span className="rounded-full border border-white/20 px-4 py-2">
-                Search by skills or company
-              </span>
-              <span className="rounded-full border border-white/20 px-4 py-2">
-                Discover career paths
+              <span className="rounded-full border border-white/30 px-4 py-2">
+                Search by company or skill
               </span>
             </div>
           </div>
         </section>
 
         <section className="mx-auto max-w-7xl px-6 py-10">
-          <div className="mb-8">
+          <div className="mb-7">
             <h2 className="text-2xl font-bold text-slate-900">
               Alumni directory
             </h2>
-            <p className="mt-2 text-slate-600">
-              Search the directory and filter alumni by industry or graduation
-              year.
+            <p className="mt-2 text-slate-700">
+              Find the right people using search and filters.
             </p>
           </div>
 
-          <div className="mb-8 grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:grid-cols-3">
-            <div className="md:col-span-1">
+          <div className="grid gap-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:grid-cols-2 lg:grid-cols-3">
+            <div className="sm:col-span-2 lg:col-span-3">
               <label
-                htmlFor="alumni-search"
-                className="mb-2 block text-sm font-medium text-slate-700"
+                htmlFor="search"
+                className="mb-2 block text-sm font-semibold text-slate-900"
               >
-                Search alumni
+                Search by name, company, role, or skill
               </label>
               <input
-                id="alumni-search"
+                id="search"
                 type="search"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Name, company, role, or skill..."
-                className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                placeholder="Try Microsoft, Python, Data Scientist..."
+                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-black placeholder:text-slate-500 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
               />
             </div>
 
             <div>
               <label
-                htmlFor="industry-filter"
-                className="mb-2 block text-sm font-medium text-slate-700"
+                htmlFor="company"
+                className="mb-2 block text-sm font-semibold text-slate-900"
               >
-                Industry
+                Filter by company
               </label>
               <select
-                id="industry-filter"
-                value={industry}
-                onChange={(event) => setIndustry(event.target.value)}
-                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                id="company"
+                value={company}
+                onChange={(event) => setCompany(event.target.value)}
+                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-black outline-none focus:border-blue-600"
               >
-                <option>All industries</option>
-                <option>Technology</option>
-                <option>Consulting</option>
-                <option>Cloud Computing</option>
+                <option value="">All companies</option>
+                {companies.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
               </select>
             </div>
 
             <div>
               <label
-                htmlFor="year-filter"
-                className="mb-2 block text-sm font-medium text-slate-700"
+                htmlFor="skill"
+                className="mb-2 block text-sm font-semibold text-slate-900"
+              >
+                Filter by skill
+              </label>
+              <select
+                id="skill"
+                value={skill}
+                onChange={(event) => setSkill(event.target.value)}
+                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-black outline-none focus:border-blue-600"
+              >
+                <option value="">All skills</option>
+                {skills.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label
+                htmlFor="industry"
+                className="mb-2 block text-sm font-semibold text-slate-900"
+              >
+                Filter by industry
+              </label>
+              <select
+                id="industry"
+                value={industry}
+                onChange={(event) => setIndustry(event.target.value)}
+                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-black outline-none focus:border-blue-600"
+              >
+                <option value="">All industries</option>
+                <option value="Technology">Technology</option>
+                <option value="Consulting">Consulting</option>
+                <option value="Cloud Computing">Cloud Computing</option>
+              </select>
+            </div>
+
+            <div>
+              <label
+                htmlFor="year"
+                className="mb-2 block text-sm font-semibold text-slate-900"
               >
                 Graduation year
               </label>
               <select
-                id="year-filter"
+                id="year"
                 value={year}
                 onChange={(event) => setYear(event.target.value)}
-                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-black outline-none focus:border-blue-600"
               >
-                <option>All years</option>
+                <option value="">All years</option>
                 <option value="2022">2022</option>
                 <option value="2023">2023</option>
                 <option value="2024">2024</option>
               </select>
             </div>
+
+            <div className="flex items-end">
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
+              >
+                Clear all filters
+              </button>
+            </div>
           </div>
 
-          <div className="mb-5 flex items-center justify-between gap-4">
-            <p className="text-sm text-slate-600">
+          <div className="mb-5 mt-7 flex items-center justify-between">
+            <p className="text-sm text-slate-700">
               Showing{" "}
-              <span className="font-semibold text-slate-900">
+              <span className="font-bold text-slate-950">
                 {filteredAlumni.length}
               </span>{" "}
-              {filteredAlumni.length === 1 ? "alumnus" : "alumni"}
+              of {alumni.length} alumni
             </p>
-
-            <button
-              type="button"
-              onClick={() => {
-                setSearch("");
-                setIndustry("All industries");
-                setYear("All years");
-              }}
-              className="text-sm font-semibold text-blue-700 hover:text-blue-900"
-            >
-              Clear filters
-            </button>
           </div>
 
           {filteredAlumni.length > 0 ? (
@@ -233,59 +312,59 @@ export default function AlumniDirectory() {
               {filteredAlumni.map((person) => (
                 <article
                   key={person.id}
-                  className="flex flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-blue-200 hover:shadow-lg"
+                  className="flex flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
                 >
-                  <div className="flex items-start gap-4">
+                  <div className="flex items-center gap-4">
                     <div
                       className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-lg font-bold ${person.color}`}
                     >
                       {person.initials}
                     </div>
 
-                    <div className="min-w-0">
-                      <h3 className="font-bold text-slate-900">
+                    <div>
+                      <h3 className="font-bold text-slate-950">
                         {person.name}
                       </h3>
-                      <p className="mt-1 text-sm text-slate-600">
+                      <p className="mt-1 text-sm text-slate-700">
                         {person.role}
                       </p>
-                      <p className="mt-1 text-sm font-semibold text-blue-700">
+                      <p className="mt-1 text-sm font-semibold text-blue-800">
                         {person.company}
                       </p>
                     </div>
                   </div>
 
                   <div className="mt-5 flex flex-wrap gap-2">
-                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-800">
                       Class of {person.year}
                     </span>
-                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-800">
                       {person.industry}
                     </span>
                   </div>
 
                   <div className="mt-5">
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    <p className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-700">
                       Skills
                     </p>
                     <div className="flex flex-wrap gap-2">
-                      {person.skills.map((skill) => (
+                      {person.skills.map((item) => (
                         <span
-                          key={skill}
-                          className="rounded-lg border border-blue-100 bg-blue-50 px-2.5 py-1.5 text-xs text-blue-800"
+                          key={item}
+                          className="rounded-lg border border-blue-100 bg-blue-50 px-2.5 py-1.5 text-xs font-medium text-blue-900"
                         >
-                          {skill}
+                          {item}
                         </span>
                       ))}
                     </div>
                   </div>
 
-                  <div className="mt-6 border-t border-slate-100 pt-4">
+                  <div className="mt-6 border-t border-slate-200 pt-4">
                     <Link
                       href={`/alumni/${person.id}`}
-                      className="inline-flex w-full items-center justify-center rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+                      className="inline-flex w-full items-center justify-center rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-800"
                     >
-                      View profile <span className="ml-2">→</span>
+                      View profile →
                     </Link>
                   </div>
                 </article>
@@ -293,29 +372,25 @@ export default function AlumniDirectory() {
             </div>
           ) : (
             <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
-              <h3 className="text-lg font-semibold text-slate-900">
+              <h3 className="text-lg font-bold text-slate-950">
                 No alumni found
               </h3>
-              <p className="mt-2 text-sm text-slate-600">
-                Try another name, company, skill, industry, or graduation year.
+              <p className="mt-2 text-sm text-slate-700">
+                Try a different search or clear your filters.
               </p>
               <button
                 type="button"
-                onClick={() => {
-                  setSearch("");
-                  setIndustry("All industries");
-                  setYear("All years");
-                }}
-                className="mt-5 rounded-xl bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-800"
+                onClick={clearFilters}
+                className="mt-5 rounded-xl bg-blue-800 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-900"
               >
-                Reset search
+                Reset filters
               </button>
             </div>
           )}
 
-          <p className="mt-8 text-xs leading-5 text-slate-500">
-            Demo notice: these alumni profiles are sample data for development.
-            They are not real user accounts.
+          <p className="mt-8 text-xs text-slate-600">
+            Demo notice: these profiles use sample data and are not real user
+            accounts.
           </p>
         </section>
       </main>
