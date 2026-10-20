@@ -1,0 +1,161 @@
+
+"use client";
+
+import Link from "next/link";
+import { useState } from "react";
+import Navbar from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer";
+
+export default function RegisterPage() {
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [role, setRole] = useState("Student");
+  const [message, setMessage] = useState("");
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (password.length < 8) {
+      setMessage("Password must contain at least 8 characters.");
+      return;
+    }
+
+    setMessage(
+      "Registration form validated. Account creation will be enabled when the database and authentication API are connected."
+    );
+  }
+
+  return (
+    <>
+      <Navbar />
+
+      <main className="flex min-h-screen items-center justify-center bg-slate-50 px-5 py-12">
+        <div className="grid w-full max-w-5xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-lg md:grid-cols-2">
+          <section className="hidden flex-col justify-between bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-800 p-10 text-white md:flex">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-300">
+                Join the community
+              </p>
+              <h1 className="mt-5 text-4xl font-bold leading-tight">
+                Your next opportunity could start with a connection.
+              </h1>
+              <p className="mt-5 leading-7 text-slate-200">
+                Discover alumni, learn from their experiences, and build
+                meaningful professional relationships through GradBridge.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-white/20 bg-white/10 p-5">
+              <p className="font-semibold">One community. More possibilities.</p>
+              <p className="mt-2 text-sm leading-6 text-slate-300">
+                Explore career paths, connect with graduates, and take the
+                next step in your professional journey.
+              </p>
+            </div>
+          </section>
+
+          <section className="p-6 sm:p-10">
+            <Link href="/" className="text-sm font-semibold text-blue-800">
+              GradBridge
+            </Link>
+
+            <h2 className="mt-6 text-3xl font-bold text-slate-950">
+              Create your account
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-slate-700">
+              Join the GradBridge student and alumni community.
+            </p>
+
+            <form onSubmit={handleSubmit} className="mt-7 space-y-5">
+              <div>
+                <label htmlFor="fullName" className="mb-2 block text-sm font-semibold text-slate-900">
+                  Full name
+                </label>
+                <input
+                  id="fullName"
+                  autoComplete="name"
+                  required
+                  value={fullName}
+                  onChange={(event) => setFullName(event.target.value)}
+                  placeholder="Enter your full name"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-black placeholder:text-slate-500 outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="email" className="mb-2 block text-sm font-semibold text-slate-900">
+                  University or personal email
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="you@example.com"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-black placeholder:text-slate-500 outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="password" className="mb-2 block text-sm font-semibold text-slate-900">
+                  Password
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  autoComplete="new-password"
+                  minLength={8}
+                  required
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  placeholder="At least 8 characters"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-black placeholder:text-slate-500 outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="role" className="mb-2 block text-sm font-semibold text-slate-900">
+                  I am a
+                </label>
+                <select
+                  id="role"
+                  value={role}
+                  onChange={(event) => setRole(event.target.value)}
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-black outline-none focus:border-blue-700"
+                >
+                  <option value="Student">Student</option>
+                  <option value="Alumni">Alumni</option>
+                </select>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full rounded-xl bg-blue-800 px-5 py-3.5 font-semibold text-white transition hover:bg-blue-900"
+              >
+                Create account
+              </button>
+            </form>
+
+            {message && (
+              <p role="status" className="mt-4 rounded-xl bg-blue-50 p-4 text-sm leading-6 text-blue-950">
+                {message}
+              </p>
+            )}
+
+            <p className="mt-6 text-center text-sm text-slate-700">
+              Already have an account?{" "}
+              <Link href="/login" className="font-semibold text-blue-800 hover:underline">
+                Log in
+              </Link>
+            </p>
+          </section>
+        </div>
+      </main>
+
+      <Footer />
+    </>
+  );
+}
