@@ -1,300 +1,323 @@
 
 "use client";
 
+import { useEffect, useState, FormEvent } from "react";
 import Link from "next/link";
-import { useState } from "react";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
+import { useRouter } from "next/navigation";
+
+type ProfileData = {
+  fullName: string;
+  email: string;
+  role: "Student" | "Alumni";
+  graduationYear: number;
+  jobTitle: string;
+  company: string;
+  industry: string;
+  techStack: string;
+  bio: string;
+  careerGoals: string;
+};
+
+const initialData: ProfileData = {
+  fullName: "",
+  email: "",
+  role: "Student",
+  graduationYear: new Date().getFullYear(),
+  jobTitle: "",
+  company: "",
+  industry: "",
+  techStack: "",
+  bio: "",
+  careerGoals: "",
+};
+
+const inputClass =
+  "w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-950 placeholder:text-slate-500 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100";
 
 export default function ProfilePage() {
-  const [fullName, setFullName] = useState("Your Name");
-  const [accountType, setAccountType] = useState("Student");
-  const [graduationYear, setGraduationYear] = useState("2027");
-  const [jobTitle, setJobTitle] = useState("");
-  const [company, setCompany] = useState("");
-  const [industry, setIndustry] = useState("Technology");
-  const [skills, setSkills] = useState("Python, C++, Machine Learning");
-  const [bio, setBio] = useState("");
-  const [careerGoals, setCareerGoals] = useState("");
+  const router = useRouter();
+  const [form, setForm] = useState<ProfileData>(initialData);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  useEffect(() => {
+    async function loadProfile() {
+      try {
+        const response = await fetch("/api/auth/me", {
+          cache: "no-store",
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+          router.replace("/login");
+          return;
+        }
+
+        const user = data.user ?? data;
+        const profile = user.profile ?? {};
+
+        setForm({
+          fullName: user.fullName ?? "",
+          email: user.email ?? "",
+          role: user.role ?? "Student",
+          graduationYear:
+            profile.graduationYear ?? new Date().getFullYear(),
+          jobTitle: profile.jobTitle ?? "",
+          company: profile.company?.name ?? "",
+          industry: profile.industry?.name ?? "",
+          techStack: profile.techStack ?? "",
+          bio: profile.bio ?? "",
+          careerGoals: profile.careerGoals ?? "",
+        });
+      } catch {
+        setError("Could not load your profile. Check the server.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadProfile();
+  }, [router]);
+
+  function updateField(
+    field: keyof ProfileData,
+    value: string | number
+  ) {
+    setForm((previous) => ({ ...previous, [field]: value }));
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setSaving(true);
+    setError("");
+    setMessage("");
 
-    setMessage(
-      "Profile form completed. Permanent saving will be enabled when the database API is connected."
+    try {
+      const response = await fetch("/api/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName: form.fullName,
+          graduationYear: Number(form.graduationYear),
+          jobTitle: form.jobTitle,
+          company: form.company,
+          industry: form.industry,
+          techStack: form.techStack,
+          bio: form.bio,
+          careerGoals: form.careerGoals,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message ?? "Unable to save your profile.");
+      }
+
+      setMessage("Your profile has been saved successfully.");
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Something went wrong."
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <main className="mx-auto max-w-3xl px-6 py-20 text-center text-slate-600">
+        Loading your profile...
+      </main>
     );
   }
 
-  const initials =
-    fullName
-      .trim()
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part[0].toUpperCase())
-      .join("") || "U";
-
   return (
-    <>
-      <Navbar />
+    <main className="min-h-screen bg-slate-50 px-4 py-12 text-slate-900 sm:px-6">
+      <div className="mx-auto max-w-3xl">
+        <Link href="/" className="text-sm font-semibold text-indigo-700">
+          ← Back to home
+        </Link>
 
-      <main className="min-h-screen bg-slate-50 px-5 py-10 md:px-6">
-        <div className="mx-auto max-w-5xl">
-          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+        <div className="mt-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-9">
+          <p className="text-sm font-semibold uppercase tracking-wider text-indigo-600">
+            GradBridge
+          </p>
+          <h1 className="mt-2 text-3xl font-bold">My profile</h1>
+          <p className="mt-2 text-slate-600">
+            Keep your academic and career information up to date.
+          </p>
+
+          {error && (
+            <p className="mt-5 rounded-xl bg-red-50 p-3 text-sm text-red-700">
+              {error}
+            </p>
+          )}
+
+          {message && (
+            <p className="mt-5 rounded-xl bg-green-50 p-3 text-sm text-green-700">
+              {message}
+            </p>
+          )}
+
+          <form onSubmit={handleSubmit} className="mt-7 space-y-5">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-widest text-blue-800">
-                Your account
-              </p>
-              <h1 className="mt-2 text-3xl font-bold text-slate-950">
-                My profile
-              </h1>
-              <p className="mt-2 text-slate-700">
-                {accountType === "Student"
-                  ? "Share your interests, skills, and career goals."
-                  : "Showcase your professional experience and career journey."}
-              </p>
+              <label className="mb-2 block text-sm font-semibold">
+                Full name
+              </label>
+              <input
+                className={inputClass}
+                value={form.fullName}
+                onChange={(e) => updateField("fullName", e.target.value)}
+                minLength={2}
+                maxLength={100}
+                required
+              />
             </div>
 
-            <Link
-              href="/alumni"
-              className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-900 hover:bg-slate-100"
-            >
-              Browse alumni
-            </Link>
-          </div>
+            <div>
+              <label className="mb-2 block text-sm font-semibold">
+                Email address
+              </label>
+              <input
+                className={`${inputClass} bg-slate-100`}
+                value={form.email}
+                readOnly
+              />
+            </div>
 
-          <div className="mt-8 grid gap-6 lg:grid-cols-[280px_1fr]">
-            <aside className="h-fit rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-blue-100 text-2xl font-bold text-blue-900">
-                {initials}
-              </div>
+            <div>
+              <label className="mb-2 block text-sm font-semibold">
+                Account type
+              </label>
+              <input
+                className={`${inputClass} bg-slate-100`}
+                value={form.role}
+                readOnly
+              />
+            </div>
 
-              <h2 className="mt-4 text-xl font-bold text-slate-950">
-                {fullName || "Your Name"}
-              </h2>
-              <p className="mt-1 text-sm text-slate-700">{accountType}</p>
+            <div>
+              <label className="mb-2 block text-sm font-semibold">
+                Graduation year
+              </label>
+              <input
+                className={inputClass}
+                type="number"
+                min={2000}
+                max={2100}
+                value={form.graduationYear}
+                onChange={(e) =>
+                  updateField("graduationYear", e.target.value)
+                }
+                required
+              />
+            </div>
 
-              {accountType === "Alumni" && (
-                <div className="mt-4 rounded-xl bg-blue-50 p-3">
-                  <p className="text-sm font-semibold text-blue-950">
-                    {jobTitle || "Job title not added"}
-                  </p>
-                  <p className="mt-1 text-sm text-blue-800">
-                    {company || "Company not added"}
-                  </p>
-                </div>
-              )}
-
-              <div className="mt-6 border-t border-slate-200 pt-5">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-600">
-                  Profile checklist
-                </p>
-                <ul className="mt-4 space-y-3 text-sm text-slate-800">
-                  <li>{fullName.trim() ? "✓" : "○"} Name</li>
-                  <li>{graduationYear ? "✓" : "○"} Graduation year</li>
-                  <li>{skills.trim() ? "✓" : "○"} Skills</li>
-                  <li>{bio.trim() ? "✓" : "○"} About you</li>
-                  {accountType === "Student" && (
-                    <li>{careerGoals.trim() ? "✓" : "○"} Career goals</li>
-                  )}
-                </ul>
-              </div>
-
-              <p className="mt-6 rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-900">
-                Demo mode: profile information is not yet saved to a database.
-              </p>
-            </aside>
-
-            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-              <h2 className="text-xl font-bold text-slate-950">
-                Profile information
-              </h2>
-              <p className="mt-2 text-sm text-slate-700">
-                Complete the fields relevant to your current role.
-              </p>
-
-              <form onSubmit={handleSubmit} className="mt-7 space-y-6">
-                <div className="grid gap-5 sm:grid-cols-2">
-                  <div>
-                    <label htmlFor="fullName" className="mb-2 block text-sm font-semibold text-slate-900">
-                      Full name
-                    </label>
-                    <input
-                      id="fullName"
-                      required
-                      value={fullName}
-                      onChange={(event) => setFullName(event.target.value)}
-                      className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-black outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="accountType" className="mb-2 block text-sm font-semibold text-slate-900">
-                      Account type
-                    </label>
-                    <select
-                      id="accountType"
-                      value={accountType}
-                      onChange={(event) => {
-                        setAccountType(event.target.value);
-                        setMessage("");
-                      }}
-                      className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-black outline-none focus:border-blue-700"
-                    >
-                      <option value="Student">Student</option>
-                      <option value="Alumni">Alumni</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label htmlFor="graduationYear" className="mb-2 block text-sm font-semibold text-slate-900">
-                      Graduation year
-                    </label>
-                    <select
-                      id="graduationYear"
-                      value={graduationYear}
-                      onChange={(event) => setGraduationYear(event.target.value)}
-                      className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-black outline-none focus:border-blue-700"
-                    >
-                      {Array.from({ length: 15 }, (_, index) => 2024 + index).map(
-                        (year) => (
-                          <option key={year} value={String(year)}>
-                            {year}
-                          </option>
-                        )
-                      )}
-                    </select>
-                  </div>
-
-                  {accountType === "Alumni" && (
-                    <>
-                      <div>
-                        <label htmlFor="jobTitle" className="mb-2 block text-sm font-semibold text-slate-900">
-                          Current job title
-                        </label>
-                        <input
-                          id="jobTitle"
-                          required
-                          value={jobTitle}
-                          onChange={(event) => setJobTitle(event.target.value)}
-                          placeholder="e.g. Software Engineer"
-                          className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-black placeholder:text-slate-500 outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
-                        />
-                      </div>
-
-                      <div>
-                        <label htmlFor="company" className="mb-2 block text-sm font-semibold text-slate-900">
-                          Current company
-                        </label>
-                        <input
-                          id="company"
-                          required
-                          value={company}
-                          onChange={(event) => setCompany(event.target.value)}
-                          placeholder="e.g. Microsoft"
-                          className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-black placeholder:text-slate-500 outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
-                        />
-                      </div>
-
-                      <div className="sm:col-span-2">
-                        <label htmlFor="industry" className="mb-2 block text-sm font-semibold text-slate-900">
-                          Industry
-                        </label>
-                        <select
-                          id="industry"
-                          value={industry}
-                          onChange={(event) => setIndustry(event.target.value)}
-                          className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-black outline-none focus:border-blue-700"
-                        >
-                          <option>Technology</option>
-                          <option>Consulting</option>
-                          <option>Cloud Computing</option>
-                          <option>Finance</option>
-                          <option>Healthcare</option>
-                          <option>Education</option>
-                          <option>Marketing</option>
-                          <option>Other</option>
-                        </select>
-                      </div>
-                    </>
-                  )}
-                </div>
-
+            {form.role === "Alumni" ? (
+              <>
                 <div>
-                  <label htmlFor="skills" className="mb-2 block text-sm font-semibold text-slate-900">
-                    Skills and technologies
+                  <label className="mb-2 block text-sm font-semibold">
+                    Current job title
                   </label>
                   <input
-                    id="skills"
-                    value={skills}
-                    onChange={(event) => setSkills(event.target.value)}
-                    placeholder="Python, SQL, Azure, React"
-                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-black placeholder:text-slate-500 outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
+                    className={inputClass}
+                    placeholder="e.g. Software Engineer"
+                    value={form.jobTitle}
+                    onChange={(e) =>
+                      updateField("jobTitle", e.target.value)
+                    }
+                    required
                   />
-                  <p className="mt-2 text-xs text-slate-600">
-                    Separate skills with commas.
-                  </p>
                 </div>
 
                 <div>
-                  <label htmlFor="bio" className="mb-2 block text-sm font-semibold text-slate-900">
-                    About you
+                  <label className="mb-2 block text-sm font-semibold">
+                    Company
                   </label>
-                  <textarea
-                    id="bio"
-                    rows={4}
-                    maxLength={500}
-                    value={bio}
-                    onChange={(event) => setBio(event.target.value)}
-                    placeholder={
-                      accountType === "Student"
-                        ? "Describe your interests, projects, and what you are learning..."
-                        : "Describe your experience and professional journey..."
+                  <input
+                    className={inputClass}
+                    placeholder="e.g. Microsoft"
+                    value={form.company}
+                    onChange={(e) =>
+                      updateField("company", e.target.value)
                     }
-                    className="w-full resize-y rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm leading-6 text-black placeholder:text-slate-500 outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
+                    required
                   />
-                  <p className="mt-2 text-right text-xs text-slate-600">
-                    {bio.length}/500 characters
-                  </p>
                 </div>
 
-                {accountType === "Student" && (
-                  <div>
-                    <label htmlFor="careerGoals" className="mb-2 block text-sm font-semibold text-slate-900">
-                      Career goals
-                    </label>
-                    <textarea
-                      id="careerGoals"
-                      rows={3}
-                      maxLength={300}
-                      value={careerGoals}
-                      onChange={(event) => setCareerGoals(event.target.value)}
-                      placeholder="e.g. I want to pursue a career in AI/ML and learn from industry professionals."
-                      className="w-full resize-y rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm leading-6 text-black placeholder:text-slate-500 outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
-                    />
-                  </div>
-                )}
+                <div>
+                  <label className="mb-2 block text-sm font-semibold">
+                    Industry
+                  </label>
+                  <input
+                    className={inputClass}
+                    placeholder="e.g. Cloud Computing"
+                    value={form.industry}
+                    onChange={(e) =>
+                      updateField("industry", e.target.value)
+                    }
+                  />
+                </div>
 
-                <button
-                  type="submit"
-                  className="w-full rounded-xl bg-blue-800 px-5 py-3.5 font-semibold text-white transition hover:bg-blue-900 sm:w-auto"
-                >
-                  Save profile
-                </button>
-              </form>
+                <div>
+                  <label className="mb-2 block text-sm font-semibold">
+                    Skills and tech stack
+                  </label>
+                  <input
+                    className={inputClass}
+                    placeholder="Python, React, Azure, SQL"
+                    value={form.techStack}
+                    onChange={(e) =>
+                      updateField("techStack", e.target.value)
+                    }
+                  />
+                </div>
+              </>
+            ) : (
+              <div>
+                <label className="mb-2 block text-sm font-semibold">
+                  Career goals
+                </label>
+                <textarea
+                  className={inputClass}
+                  rows={3}
+                  maxLength={1000}
+                  placeholder="What roles, skills or industries interest you?"
+                  value={form.careerGoals}
+                  onChange={(e) =>
+                    updateField("careerGoals", e.target.value)
+                  }
+                />
+              </div>
+            )}
 
-              {message && (
-                <p role="status" className="mt-5 rounded-xl bg-blue-50 p-4 text-sm leading-6 text-blue-950">
-                  {message}
-                </p>
-              )}
-            </section>
-          </div>
+            <div>
+              <label className="mb-2 block text-sm font-semibold">
+                About me
+              </label>
+              <textarea
+                className={inputClass}
+                rows={4}
+                maxLength={1000}
+                placeholder="Introduce yourself..."
+                value={form.bio}
+                onChange={(e) => updateField("bio", e.target.value)}
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={saving}
+              className="w-full rounded-xl bg-indigo-600 px-5 py-3 font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-60"
+            >
+              {saving ? "Saving..." : "Save profile"}
+            </button>
+          </form>
         </div>
-      </main>
-
-      <Footer />
-    </>
+      </div>
+    </main>
   );
 }

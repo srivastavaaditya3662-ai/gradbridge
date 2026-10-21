@@ -1,139 +1,82 @@
 
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
 
-const alumni = [
-  {
-    id: "1",
-    name: "Aarav Sharma",
-    role: "Software Engineer",
-    company: "Microsoft",
-    industry: "Technology",
-    year: "2023",
-    skills: ["Python", "Azure", "AI/ML"],
-    initials: "AS",
-    color: "bg-blue-100 text-blue-800",
-  },
-  {
-    id: "2",
-    name: "Priya Verma",
-    role: "Data Scientist",
-    company: "Amazon",
-    industry: "Technology",
-    year: "2022",
-    skills: ["Python", "SQL", "Machine Learning"],
-    initials: "PV",
-    color: "bg-purple-100 text-purple-800",
-  },
-  {
-    id: "3",
-    name: "Rohan Gupta",
-    role: "Frontend Developer",
-    company: "Adobe",
-    industry: "Technology",
-    year: "2024",
-    skills: ["React", "JavaScript", "CSS"],
-    initials: "RG",
-    color: "bg-orange-100 text-orange-800",
-  },
-  {
-    id: "4",
-    name: "Sneha Singh",
-    role: "Business Analyst",
-    company: "Deloitte",
-    industry: "Consulting",
-    year: "2022",
-    skills: ["Excel", "SQL", "Power BI"],
-    initials: "SS",
-    color: "bg-pink-100 text-pink-800",
-  },
-  {
-    id: "5",
-    name: "Kabir Mehta",
-    role: "Cloud Engineer",
-    company: "Accenture",
-    industry: "Cloud Computing",
-    year: "2023",
-    skills: ["AWS", "Docker", "Linux"],
-    initials: "KM",
-    color: "bg-green-100 text-green-800",
-  },
-  {
-    id: "6",
-    name: "Ananya Kapoor",
-    role: "ML Engineer",
-    company: "Google",
-    industry: "Technology",
-    year: "2024",
-    skills: ["Python", "TensorFlow", "AI/ML"],
-    initials: "AK",
-    color: "bg-indigo-100 text-indigo-800",
-  },
-];
+type Alumni = {
+  id: string;
+  userId: string;
+  graduationYear: number;
+  jobTitle: string | null;
+  techStack: string;
+  bio: string;
+  user: {
+    id: string;
+    fullName: string;
+  };
+  company: { name: string } | null;
+  industry: { name: string } | null;
+};
 
-const companies = [
-  "Microsoft",
-  "Amazon",
-  "Adobe",
-  "Deloitte",
-  "Accenture",
-  "Google",
-];
+const inputClass =
+  "w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-950 placeholder:text-slate-500 outline-none focus:border-indigo-500";
 
-const skills = [
-  "Python",
-  "Azure",
-  "AI/ML",
-  "SQL",
-  "Machine Learning",
-  "React",
-  "JavaScript",
-  "CSS",
-  "Excel",
-  "Power BI",
-  "AWS",
-  "Docker",
-  "Linux",
-  "TensorFlow",
-];
-
-export default function AlumniDirectory() {
+export default function AlumniPage() {
+  const [alumni, setAlumni] = useState<Alumni[]>([]);
   const [search, setSearch] = useState("");
   const [company, setCompany] = useState("");
   const [skill, setSkill] = useState("");
   const [industry, setIndustry] = useState("");
   const [year, setYear] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const filteredAlumni = useMemo(() => {
-    const query = search.trim().toLowerCase();
+  async function loadAlumni() {
+    setLoading(true);
+    setError("");
 
-    return alumni.filter((person) => {
-      const matchesSearch =
-        !query ||
-        person.name.toLowerCase().includes(query) ||
-        person.role.toLowerCase().includes(query) ||
-        person.company.toLowerCase().includes(query) ||
-        person.industry.toLowerCase().includes(query) ||
-        person.skills.some((item) => item.toLowerCase().includes(query));
+    try {
+      const params = new URLSearchParams();
 
-      const matchesCompany = !company || person.company === company;
-      const matchesSkill = !skill || person.skills.includes(skill);
-      const matchesIndustry = !industry || person.industry === industry;
-      const matchesYear = !year || person.year === year;
+      if (search.trim()) params.set("search", search.trim());
+      if (company.trim()) params.set("company", company.trim());
+      if (skill.trim()) params.set("skill", skill.trim());
+      if (industry.trim()) params.set("industry", industry.trim());
+      if (year.trim()) params.set("year", year.trim());
 
-      return (
-        matchesSearch &&
-        matchesCompany &&
-        matchesSkill &&
-        matchesIndustry &&
-        matchesYear
+      const response = await fetch(`/api/alumni?${params.toString()}`, {
+        cache: "no-store",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message ?? "Unable to load alumni.");
+      }
+
+      setAlumni(
+  Array.isArray(data) ? data : data.alumni ?? data.profiles ?? []
+);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Unable to load alumni."
       );
-    });
-  }, [search, company, skill, industry, year]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadAlumni();
+    // Load initial directory once when the page opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function handleSearch(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    void loadAlumni();
+  }
 
   function clearFilters() {
     setSearch("");
@@ -141,261 +84,210 @@ export default function AlumniDirectory() {
     setSkill("");
     setIndustry("");
     setYear("");
+
+    setLoading(true);
+    setError("");
+
+    fetch("/api/alumni", { cache: "no-store" })
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.message ?? "Unable to load alumni.");
+        }
+        setAlumni(
+  Array.isArray(data) ? data : data.alumni ?? data.profiles ?? []
+);
+      })
+      .catch((err: unknown) => {
+        setError(
+          err instanceof Error ? err.message : "Unable to load alumni."
+        );
+      })
+      .finally(() => setLoading(false));
   }
 
   return (
-    <>
-      <Navbar />
+    <main className="min-h-screen bg-slate-50 px-4 py-12 text-slate-900 sm:px-6">
+      <div className="mx-auto max-w-6xl">
+        <p className="text-sm font-semibold uppercase tracking-widest text-indigo-600">
+          GradBridge Network
+        </p>
+        <h1 className="mt-2 text-3xl font-bold sm:text-4xl">
+          Discover alumni
+        </h1>
+        <p className="mt-3 max-w-2xl text-slate-600">
+          Find graduates by company, skills, industry and graduation year.
+          Explore their experience and connect with them.
+        </p>
 
-      <main className="min-h-screen bg-slate-50">
-        <section className="bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-900 px-6 py-16 text-white">
-          <div className="mx-auto max-w-7xl">
-            <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-blue-300">
-              Your network starts here
-            </p>
-
-            <h1 className="max-w-3xl text-4xl font-bold tracking-tight md:text-5xl">
-              Find alumni. Build connections. Grow your career.
-            </h1>
-
-            <p className="mt-5 max-w-2xl text-base leading-7 text-slate-200 md:text-lg">
-              Discover graduates, explore career paths, and connect with
-              professionals who can guide your next step.
-            </p>
-
-            <div className="mt-8 flex flex-wrap gap-3 text-sm text-white">
-              <span className="rounded-full border border-white/30 px-4 py-2">
-                {alumni.length} sample alumni
-              </span>
-              <span className="rounded-full border border-white/30 px-4 py-2">
-                Search by company or skill
-              </span>
-            </div>
-          </div>
-        </section>
-
-        <section className="mx-auto max-w-7xl px-6 py-10">
-          <div className="mb-7">
-            <h2 className="text-2xl font-bold text-slate-900">
-              Alumni directory
-            </h2>
-            <p className="mt-2 text-slate-700">
-              Find the right people using search and filters.
-            </p>
+        <form
+          onSubmit={handleSearch}
+          className="mt-8 grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:grid-cols-2 lg:grid-cols-3"
+        >
+          <div>
+            <label className="mb-2 block text-sm font-medium">
+              Name or keyword
+            </label>
+            <input
+              className={inputClass}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Name or job title"
+            />
           </div>
 
-          <div className="grid gap-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:grid-cols-2 lg:grid-cols-3">
-            <div className="sm:col-span-2 lg:col-span-3">
-              <label
-                htmlFor="search"
-                className="mb-2 block text-sm font-semibold text-slate-900"
-              >
-                Search by name, company, role, or skill
-              </label>
-              <input
-                id="search"
-                type="search"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Try Microsoft, Python, Data Scientist..."
-                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-black placeholder:text-slate-500 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="company"
-                className="mb-2 block text-sm font-semibold text-slate-900"
-              >
-                Filter by company
-              </label>
-              <select
-                id="company"
-                value={company}
-                onChange={(event) => setCompany(event.target.value)}
-                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-black outline-none focus:border-blue-600"
-              >
-                <option value="">All companies</option>
-                {companies.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label
-                htmlFor="skill"
-                className="mb-2 block text-sm font-semibold text-slate-900"
-              >
-                Filter by skill
-              </label>
-              <select
-                id="skill"
-                value={skill}
-                onChange={(event) => setSkill(event.target.value)}
-                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-black outline-none focus:border-blue-600"
-              >
-                <option value="">All skills</option>
-                {skills.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label
-                htmlFor="industry"
-                className="mb-2 block text-sm font-semibold text-slate-900"
-              >
-                Filter by industry
-              </label>
-              <select
-                id="industry"
-                value={industry}
-                onChange={(event) => setIndustry(event.target.value)}
-                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-black outline-none focus:border-blue-600"
-              >
-                <option value="">All industries</option>
-                <option value="Technology">Technology</option>
-                <option value="Consulting">Consulting</option>
-                <option value="Cloud Computing">Cloud Computing</option>
-              </select>
-            </div>
-
-            <div>
-              <label
-                htmlFor="year"
-                className="mb-2 block text-sm font-semibold text-slate-900"
-              >
-                Graduation year
-              </label>
-              <select
-                id="year"
-                value={year}
-                onChange={(event) => setYear(event.target.value)}
-                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-black outline-none focus:border-blue-600"
-              >
-                <option value="">All years</option>
-                <option value="2022">2022</option>
-                <option value="2023">2023</option>
-                <option value="2024">2024</option>
-              </select>
-            </div>
-
-            <div className="flex items-end">
-              <button
-                type="button"
-                onClick={clearFilters}
-                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
-              >
-                Clear all filters
-              </button>
-            </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium">
+              Company
+            </label>
+            <input
+              className={inputClass}
+              value={company}
+              onChange={(e) => setCompany(e.target.value)}
+              placeholder="e.g. Microsoft"
+            />
           </div>
 
-          <div className="mb-5 mt-7 flex items-center justify-between">
-            <p className="text-sm text-slate-700">
-              Showing{" "}
-              <span className="font-bold text-slate-950">
-                {filteredAlumni.length}
-              </span>{" "}
-              of {alumni.length} alumni
-            </p>
+          <div>
+            <label className="mb-2 block text-sm font-medium">
+              Skill or tech stack
+            </label>
+            <input
+              className={inputClass}
+              value={skill}
+              onChange={(e) => setSkill(e.target.value)}
+              placeholder="e.g. Python"
+            />
           </div>
 
-          {filteredAlumni.length > 0 ? (
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {filteredAlumni.map((person) => (
-                <article
-                  key={person.id}
-                  className="flex flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
-                >
-                  <div className="flex items-center gap-4">
-                    <div
-                      className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-lg font-bold ${person.color}`}
-                    >
-                      {person.initials}
-                    </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium">
+              Industry
+            </label>
+            <input
+              className={inputClass}
+              value={industry}
+              onChange={(e) => setIndustry(e.target.value)}
+              placeholder="e.g. AI or Finance"
+            />
+          </div>
 
-                    <div>
-                      <h3 className="font-bold text-slate-950">
-                        {person.name}
-                      </h3>
-                      <p className="mt-1 text-sm text-slate-700">
-                        {person.role}
-                      </p>
-                      <p className="mt-1 text-sm font-semibold text-blue-800">
-                        {person.company}
-                      </p>
-                    </div>
-                  </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium">
+              Graduation year
+            </label>
+            <input
+              className={inputClass}
+              type="number"
+              min={2000}
+              max={2100}
+              value={year}
+              onChange={(e) => setYear(e.target.value)}
+              placeholder="e.g. 2024"
+            />
+          </div>
 
-                  <div className="mt-5 flex flex-wrap gap-2">
-                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-800">
-                      Class of {person.year}
-                    </span>
-                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-800">
-                      {person.industry}
-                    </span>
-                  </div>
+          <div className="flex items-end gap-3">
+            <button
+              type="submit"
+              className="flex-1 rounded-xl bg-indigo-600 px-4 py-3 font-semibold text-white hover:bg-indigo-700"
+            >
+              Search
+            </button>
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="rounded-xl border border-slate-300 px-4 py-3 font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              Clear
+            </button>
+          </div>
+        </form>
 
-                  <div className="mt-5">
-                    <p className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-700">
-                      Skills
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {person.skills.map((item) => (
-                        <span
-                          key={item}
-                          className="rounded-lg border border-blue-100 bg-blue-50 px-2.5 py-1.5 text-xs font-medium text-blue-900"
-                        >
-                          {item}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="mt-6 border-t border-slate-200 pt-4">
-                    <Link
-                      href={`/alumni/${person.id}`}
-                      className="inline-flex w-full items-center justify-center rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-800"
-                    >
-                      View profile →
-                    </Link>
-                  </div>
-                </article>
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
-              <h3 className="text-lg font-bold text-slate-950">
-                No alumni found
-              </h3>
-              <p className="mt-2 text-sm text-slate-700">
-                Try a different search or clear your filters.
-              </p>
-              <button
-                type="button"
-                onClick={clearFilters}
-                className="mt-5 rounded-xl bg-blue-800 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-900"
-              >
-                Reset filters
-              </button>
-            </div>
+        <div className="mt-8 flex items-center justify-between">
+          <h2 className="text-xl font-bold">Alumni directory</h2>
+          {!loading && (
+            <span className="text-sm text-slate-500">
+              {alumni.length} result(s)
+            </span>
           )}
+        </div>
 
-          <p className="mt-8 text-xs text-slate-600">
-            Demo notice: these profiles use sample data and are not real user
-            accounts.
+        {error && (
+          <p className="mt-5 rounded-xl bg-red-50 p-4 text-red-700">
+            {error}
           </p>
-        </section>
-      </main>
+        )}
 
-      <Footer />
-    </>
+        {loading ? (
+          <p className="py-12 text-center text-slate-600">
+            Loading alumni...
+          </p>
+        ) : alumni.length === 0 ? (
+          <div className="mt-5 rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
+            <h3 className="text-lg font-semibold">No alumni found</h3>
+            <p className="mt-2 text-slate-600">
+              Try different filters, or create an Alumni account and complete
+              its profile to add a directory entry.
+            </p>
+          </div>
+        ) : (
+          <div className="mt-5 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+            {alumni.map((person) => (
+              <article
+                key={person.user.id}
+                className="flex flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+              >
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-100 text-lg font-bold text-indigo-700">
+                  {person.user.fullName.charAt(0).toUpperCase()}
+                </div>
+
+                <h3 className="mt-4 text-xl font-bold">
+                  {person.user.fullName}
+                </h3>
+                <p className="mt-1 text-sm text-indigo-700">
+                  {person.jobTitle || "Career information not added"}
+                </p>
+
+                <div className="mt-4 space-y-2 text-sm text-slate-600">
+                  <p>
+                    <span className="font-semibold text-slate-800">
+                      Company:
+                    </span>{" "}
+                    {person.company?.name || "Not specified"}
+                  </p>
+                  <p>
+                    <span className="font-semibold text-slate-800">
+                      Industry:
+                    </span>{" "}
+                    {person.industry?.name || "Not specified"}
+                  </p>
+                  <p>
+                    <span className="font-semibold text-slate-800">
+                      Graduated:
+                    </span>{" "}
+                    {person.graduationYear}
+                  </p>
+                </div>
+
+                {person.techStack && (
+                  <p className="mt-4 rounded-lg bg-slate-50 p-3 text-sm text-slate-700">
+                    <span className="font-semibold">Skills: </span>
+                    {person.techStack}
+                  </p>
+                )}
+
+                <Link
+                  href={`/alumni/${person.user.id}`}
+                  className="mt-5 inline-flex justify-center rounded-xl border border-indigo-200 px-4 py-3 font-semibold text-indigo-700 hover:bg-indigo-50"
+                >
+                  View profile
+                </Link>
+              </article>
+            ))}
+          </div>
+        )}
+      </div>
+    </main>
   );
 }

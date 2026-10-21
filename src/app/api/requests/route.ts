@@ -104,3 +104,69 @@ export async function POST(request: Request) {
     );
   }
 }
+
+
+export async function PATCH(request: Request) {
+  try {
+    const userId = await getSessionUserId();
+
+    if (!userId) {
+      return NextResponse.json(
+        { message: "Please log in first." },
+        { status: 401 }
+      );
+    }
+
+    const body: unknown = await request.json();
+
+    if (
+      typeof body !== "object" ||
+      body === null ||
+      !("requestId" in body) ||
+      !("status" in body) ||
+      typeof body.requestId !== "string" ||
+      !["Accepted", "Rejected"].includes(String(body.status))
+    ) {
+      return NextResponse.json(
+        { message: "Invalid request update." },
+        { status: 400 }
+      );
+    }
+
+    const existingRequest = await prisma.request.findUnique({
+      where: { id: body.requestId },
+      select: { id: true, alumniId: true, status: true },
+    });
+
+    if (!existingRequest || existingRequest.alumniId !== userId) {
+      return NextResponse.json(
+        { message: "Request not found." },
+        { status: 404 }
+      );
+    }
+
+    if (existingRequest.status !== "Pending") {
+      return NextResponse.json(
+        { message: "This request has already been processed." },
+        { status: 409 }
+      );
+    }
+
+    const updatedRequest = await prisma.request.update({
+      where: { id: existingRequest.id },
+      data: { status: body.status as "Accepted" | "Rejected" },
+    });
+
+    return NextResponse.json({
+      message: `Request ${updatedRequest.status.toLowerCase()}.`,
+      request: updatedRequest,
+    });
+  } catch (error) {
+    console.error("Request update error:", error);
+
+    return NextResponse.json(
+      { message: "Unable to update the request." },
+      { status: 500 }
+    );
+  }
+}

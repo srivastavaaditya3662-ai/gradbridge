@@ -1,139 +1,236 @@
 
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSessionUserId } from "@/lib/auth";
 
-const profileSchema = z.object({
-  fullName: z.string().trim().min(2).max(100),
-  graduationYear: z.number().int().min(2000).max(2100),
-  jobTitle: z.string().trim().max(100).optional().default(""),
-  company: z.string().trim().max(100).optional().default(""),
-  industry: z.string().trim().max(100).optional().default(""),
-  skills: z.string().trim().max(500).optional().default(""),
-  bio: z.string().trim().max(500).optional().default(""),
-  careerGoals: z.string().trim().max(300).optional().default(""),
-});
-
 export async function GET() {
-  const userId = await getSessionUserId();
-
-  if (!userId) {
-    return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
-  }
-
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      id: true,
-      fullName: true,
-      email: true,
-      role: true,
-      profile: {
-        include: { company: true, industry: true },
-      },
-    },
-  });
-
-  if (!user) {
-    return NextResponse.json({ error: "User not found." }, { status: 404 });
-  }
-
-  return NextResponse.json({ user });
-}
-
-export async function PUT(request: Request) {
-  const userId = await getSessionUserId();
-
-  if (!userId) {
-    return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
-  }
-
   try {
-    const body = await request.json();
-    const result = profileSchema.safeParse(body);
+    const userId = await getSessionUserId();
 
-    if (!result.success) {
+    if (!userId) {
       return NextResponse.json(
-        { error: "Invalid profile details.", details: result.error.flatten() },
-        { status: 400 }
+        { message: "Please log in first." },
+        { status: 401 }
       );
     }
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, role: true },
+      include: {
+        profile: {
+          include: {
+            company: true,
+            industry: true,
+          },
+        },
+      },
     });
 
     if (!user) {
-      return NextResponse.json({ error: "User not found." }, { status: 404 });
+      return NextResponse.json(
+        { message: "User not found." },
+        { status: 404 }
+      );
     }
 
-    const data = result.data;
-    const isAlumni = user.role === "Alumni";
+    return NextResponse.json({ user });
+  } catch (error) {
+    console.error("Profile GET error:", error);
 
-    if (isAlumni && (!data.jobTitle || !data.company)) {
+    return NextResponse.json(
+      { message: "Unable to load your profile." },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(request: Request) {
+  try {
+    const userId = await getSessionUserId();
+
+    if (!userId) {
       return NextResponse.json(
-        { error: "Alumni must provide their current job title and company." },
+        { message: "Please log in first." },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+
+    const fullName =
+      typeof body.fullName === "string"
+        ? body.fullName.trim()
+        : "";
+
+    const graduationYear = Number(body.graduationYear);
+
+    if (
+      !fullName ||
+      fullName.length > 100 ||
+      !Number.isInteger(graduationYear) ||
+      graduationYear < 1900 ||
+      graduationYear > 2100
+    ) {
+      return NextResponse.json(
+        { message: "Enter a valid name and graduation year." },
         { status: 400 }
       );
     }
 
-    const company = isAlumni && data.company
-      ? await prisma.company.upsert({
-          where: { name: data.company },
-          update: {},
-          create: { name: data.company },
-        })
-      : null;
-
-    const industry = isAlumni && data.industry
-      ? await prisma.industry.upsert({
-          where: { name: data.industry },
-          update: {},
-          create: { name: data.industry },
-        })
-      : null;
-
-    await prisma.user.update({
+    const currentUser = await prisma.user.findUnique({
       where: { id: userId },
-      data: { fullName: data.fullName },
+      select: { id: true, role: true },
     });
 
-    const profile = await prisma.profile.upsert({
-      where: { userId },
-      update: {
-        graduationYear: data.graduationYear,
-        jobTitle: isAlumni ? data.jobTitle : null,
-        techStack: data.skills,
-        bio: data.bio,
-        careerGoals: isAlumni ? "" : data.careerGoals,
-        company: company
-          ? { connect: { id: company.id } }
-          : { disconnect: true },
-        industry: industry
-          ? { connect: { id: industry.id } }
-          : { disconnect: true },
-      },
-      create: {
-        userId,
-        graduationYear: data.graduationYear,
-        jobTitle: isAlumni ? data.jobTitle : null,
-        techStack: data.skills,
-        bio: data.bio,
-        careerGoals: isAlumni ? "" : data.careerGoals,
-        ...(company ? { company: { connect: { id: company.id } } } : {}),
-        ...(industry ? { industry: { connect: { id: industry.id } } } : {}),
-      },
-      include: { company: true, industry: true },
-    });
+    if (!currentUser) {
+      return NextResponse.json(
+        { message: "User not found." },
+        { status: 404 }
+      );
+    }
 
-    return NextResponse.json({ message: "Profile saved.", profile });
-  } catch (error) {
-    console.error("Profile update failed:", error);
+    const cleanString = (value: unknown): string =>
+      typeof value === "string" ? value.trim() : "";
+
+    const bio = cleanString(body.bio);
+    const careerGoals = cleanString(body.careerGoals);
+
+    if (bio.length > 1000 || careerGoals.length > 1000) {
+      return NextResponse.json(
+        { message: "Bio and career goals must be 1000 characters or fewer." },
+        { status: 400 }
+      );
+    }
+
+    let jobTitle: string | null = null;
+    let techStack = "";
+    let companyId: string | null = null;
+    let industryId: string | null = null;
+
+    if (currentUser.role === "Alumni") {
+      jobTitle = cleanString(body.jobTitle) || null;
+      techStack = cleanString(body.techStack);
+
+      const companyName = cleanString(body.company);
+      const industryName = cleanString(body.industry);
+
+      if (
+        jobTitle && jobTitle.length > 150 ||
+        companyName.length > 150 ||
+        industryName.length > 100 ||
+        techStack.length > 500
+      ) {
+        return NextResponse.json(
+          { message: "One or more profile fields are too long." },
+          { status: 400 }
+        );
+      }
+
+      const result = await prisma.$transaction(async (tx) => {
+        const company = companyName
+          ? await tx.company.upsert({
+              where: { name: companyName },
+              update: {},
+              create: { name: companyName },
+            })
+          : null;
+
+        const industry = industryName
+          ? await tx.industry.upsert({
+              where: { name: industryName },
+              update: {},
+              create: { name: industryName },
+            })
+          : null;
+
+        companyId = company?.id ?? null;
+        industryId = industry?.id ?? null;
+
+        await tx.user.update({
+          where: { id: userId },
+          data: { fullName },
+        });
+
+        return tx.profile.upsert({
+          where: { userId },
+          update: {
+            graduationYear,
+            jobTitle,
+            companyId,
+            industryId,
+            techStack,
+            bio,
+            careerGoals: "",
+          },
+          create: {
+            userId,
+            graduationYear,
+            jobTitle,
+            companyId,
+            industryId,
+            techStack,
+            bio,
+            careerGoals: "",
+          },
+          include: {
+            company: true,
+            industry: true,
+          },
+        });
+      });
+
+      return NextResponse.json({
+        message: "Profile saved successfully.",
+        profile: result,
+      });
+    }
+
+    if (currentUser.role === "Student") {
+      const result = await prisma.$transaction(async (tx) => {
+        await tx.user.update({
+          where: { id: userId },
+          data: { fullName },
+        });
+
+        return tx.profile.upsert({
+          where: { userId },
+          update: {
+            graduationYear,
+            jobTitle: null,
+            companyId: null,
+            industryId: null,
+            techStack: "",
+            bio,
+            careerGoals,
+          },
+          create: {
+            userId,
+            graduationYear,
+            jobTitle: null,
+            companyId: null,
+            industryId: null,
+            techStack: "",
+            bio,
+            careerGoals,
+          },
+        });
+      });
+
+      return NextResponse.json({
+        message: "Profile saved successfully.",
+        profile: result,
+      });
+    }
 
     return NextResponse.json(
-      { error: "Unable to save profile." },
+      { message: "Your account role cannot update profiles." },
+      { status: 403 }
+    );
+  } catch (error) {
+    console.error("Profile PUT error:", error);
+
+    return NextResponse.json(
+      { message: "Unable to save your profile. Check the server terminal for details." },
       { status: 500 }
     );
   }
