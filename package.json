@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@azure/storage-blob": "^12.34.0",
     "@prisma/client": "^6.19.3",
     "bcryptjs": "^3.0.3",
     "jose": "^6.2.13",
