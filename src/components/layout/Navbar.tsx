@@ -11,6 +11,7 @@ export default function Navbar() {
 
   const [loggedIn, setLoggedIn] = useState(false);
   const [name, setName] = useState("");
+  const [role, setRole] = useState("");
   const [loggingOut, setLoggingOut] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -29,16 +30,20 @@ export default function Navbar() {
 
         if (response.ok) {
           const user = data.user ?? data;
+
           setLoggedIn(true);
           setName(user.fullName ?? "");
+          setRole(user.role ?? "");
         } else {
           setLoggedIn(false);
           setName("");
+          setRole("");
         }
       } catch {
         if (active) {
           setLoggedIn(false);
           setName("");
+          setRole("");
         }
       }
     }
@@ -68,7 +73,9 @@ export default function Navbar() {
 
       setLoggedIn(false);
       setName("");
+      setRole("");
       setMenuOpen(false);
+
       router.push("/login");
       router.refresh();
     } catch {
@@ -82,10 +89,12 @@ export default function Navbar() {
     { href: "/", label: "Home" },
     { href: "/alumni", label: "Alumni Directory" },
     ...(loggedIn
-      ? [
-          { href: "/requests", label: "My Requests" },
-          { href: "/profile", label: "My Profile" },
-        ]
+      ? role === "Admin"
+        ? [{ href: "/admin", label: "Admin Dashboard" }]
+        : [
+            { href: "/requests", label: "My Requests" },
+            { href: "/profile", label: "My Profile" },
+          ]
       : []),
   ];
 
@@ -240,7 +249,13 @@ export default function Navbar() {
                   <span className="font-semibold text-slate-800">
                     {name || "User"}
                   </span>
+                  {role && (
+                    <span className="ml-2 rounded-full bg-indigo-50 px-2 py-1 text-xs font-semibold text-indigo-700">
+                      {role}
+                    </span>
+                  )}
                 </div>
+
                 <button
                   onClick={() => void logout()}
                   disabled={loggingOut}

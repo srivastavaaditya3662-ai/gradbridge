@@ -1,7 +1,7 @@
 
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, Suspense, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 
@@ -21,7 +21,7 @@ type AlumniProfile = {
   industry: { name: string } | null;
 };
 
-export default function AlumniDetailPage() {
+function AlumniDetailContent() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const [profile, setProfile] = useState<AlumniProfile | null>(null);
@@ -242,5 +242,13 @@ export default function AlumniDetailPage() {
         )}
       </div>
     </main>
+  );
+}
+
+export default function AlumniDetailPage() {
+  return (
+    <Suspense fallback={<div>Loading alumni profile...</div>}>
+      <AlumniDetailContent />
+    </Suspense>
   );
 }

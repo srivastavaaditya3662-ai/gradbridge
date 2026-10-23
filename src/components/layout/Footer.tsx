@@ -27,7 +27,7 @@ export default function Footer() {
         </div>
 
         <p className="text-sm text-slate-500">
-          © {new Date().getFullYear()} GradBridge
+          © 2026 GradBridge
         </p>
       </div>
     </footer>

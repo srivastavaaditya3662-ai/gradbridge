@@ -13,9 +13,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("Student");
-  const [graduationYear, setGraduationYear] = useState(
-    String(new Date().getFullYear() + 4)
-  );
+  const [graduationYear, setGraduationYear] = useState("2030");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 

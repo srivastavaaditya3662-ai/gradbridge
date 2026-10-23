@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
+export const instant = false;
 export async function GET(request: NextRequest) {
   try {
     const params = request.nextUrl.searchParams;
