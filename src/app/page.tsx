@@ -69,10 +69,15 @@ function PublicLandingPage() {
               Your network. Your next opportunity.
             </span>
 
-            <h1 className="mt-7 text-4xl font-extrabold leading-tight tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
-              Your next chapter starts with a{" "}
-              <span className="text-indigo-600">connection.</span>
-            </h1>
+            
+<h1
+  style={{ color: "#17233f" }}
+  className="mt-7 text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl lg:text-6xl"
+>
+  Your next chapter starts with a{" "}
+  <span style={{ color: "#4f46e5" }}>connection.</span>
+</h1>
+
 
             <p className="mt-6 max-w-xl text-lg leading-8 text-slate-600">
               Connect with graduates, discover career journeys, and reach
@@ -181,25 +186,48 @@ function PublicLandingPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-5 pb-20 sm:px-8 lg:px-10">
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-700 to-blue-600 px-7 py-12 text-center text-white sm:px-12 sm:py-16">
-          <div className="pointer-events-none absolute -right-16 -top-24 h-64 w-64 rounded-full bg-white/10 blur-2xl" />
-          <div className="relative">
-            <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
-              Start building your network.
-            </h2>
-            <p className="mx-auto mt-4 max-w-xl leading-7 text-indigo-100">
-              Your next opportunity could begin with a conversation.
-            </p>
-            <Link
-              href="/register"
-              className="mt-7 inline-flex rounded-xl bg-white px-6 py-3.5 font-bold text-indigo-700 transition hover:-translate-y-0.5 hover:bg-indigo-50"
-            >
-              Create your account →
-            </Link>
-          </div>
-        </div>
-      </section>
+      
+<section className="gb-cta-section mx-auto max-w-7xl px-5 pb-20 sm:px-8 lg:px-10">
+  <div className="gb-cta-card relative overflow-hidden rounded-3xl border px-7 py-12 sm:px-12 sm:py-16">
+    <div
+      className="pointer-events-none absolute -right-12 -top-16 h-56 w-56 rounded-full bg-indigo-300/20 blur-3xl"
+      aria-hidden="true"
+    />
+    <div
+      className="pointer-events-none absolute -bottom-20 -left-12 h-56 w-56 rounded-full bg-violet-300/20 blur-3xl"
+      aria-hidden="true"
+    />
+
+    <div className="relative mx-auto grid max-w-5xl items-center gap-8 md:grid-cols-[1fr_auto] md:gap-12">
+      <div className="text-center md:text-left">
+        <span className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-indigo-700">
+          <span className="h-2 w-2 rounded-full bg-indigo-500" />
+          Your next opportunity starts here
+        </span>
+
+        <h2 className="mt-5 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+          Your network can take you further.
+        </h2>
+
+        <p className="mx-auto mt-4 max-w-xl leading-7 text-slate-600 md:mx-0">
+          Meet experienced graduates, learn from their journeys, and build
+          connections that help move your career forward.
+        </p>
+      </div>
+
+      <div className="flex justify-center md:justify-end">
+        <Link
+          href="/register"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-3.5 font-bold text-white shadow-lg shadow-indigo-600/20 transition hover:-translate-y-0.5 hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-indigo-500"
+        >
+          Join GradBridge
+          <span aria-hidden="true">→</span>
+        </Link>
+      </div>
+    </div>
+  </div>
+</section>
+
     </>
   );
 }

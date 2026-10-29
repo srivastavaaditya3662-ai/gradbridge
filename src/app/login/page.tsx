@@ -33,7 +33,7 @@ export default function LoginPage() {
         return;
       }
 
-      router.push("/profile");
+      router.push("/");
       router.refresh();
     } catch {
       setMessage("Unable to contact the server. Please try again.");

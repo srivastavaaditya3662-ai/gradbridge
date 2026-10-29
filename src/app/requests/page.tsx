@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 type RequestItem = {
   id: string;
   message: string;
+  reply: string | null;
   status: string;
   createdAt: string;
   studentId: string;
@@ -18,11 +19,13 @@ type RequestItem = {
 
 export default function RequestsPage() {
   const router = useRouter();
+
   const [requests, setRequests] = useState<RequestItem[]>([]);
   const [role, setRole] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [updatingId, setUpdatingId] = useState("");
+  const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
 
   const loadRequests = useCallback(async () => {
     setLoading(true);
@@ -48,7 +51,7 @@ export default function RequestsPage() {
 
       if (!requestsResponse.ok) {
         throw new Error(
-          requestData.message ?? "Unable to load requests."
+          requestData.message ?? requestData.error ?? "Unable to load requests."
         );
       }
 
@@ -95,7 +98,9 @@ export default function RequestsPage() {
       }
 
       if (!response.ok) {
-        throw new Error(data.message ?? "Unable to update request.");
+        throw new Error(
+          data.message ?? data.error ?? "Unable to update request."
+        );
       }
 
       await loadRequests();
@@ -108,11 +113,59 @@ export default function RequestsPage() {
     }
   }
 
+  async function sendReply(requestId: string) {
+    const reply = (replyDrafts[requestId] ?? "").trim();
+
+    if (!reply) {
+      setError("Please write a reply before sending.");
+      return;
+    }
+
+    if (reply.length > 500) {
+      setError("Your reply must be 500 characters or fewer.");
+      return;
+    }
+
+    setUpdatingId(requestId);
+    setError("");
+
+    try {
+      const response = await fetch("/api/requests", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requestId, reply }),
+      });
+
+      const data = await response.json();
+
+      if (response.status === 401) {
+        router.replace("/login");
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(data.message ?? "Unable to send reply.");
+      }
+
+      setReplyDrafts((previous) => ({
+        ...previous,
+        [requestId]: "",
+      }));
+
+      await loadRequests();
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Unable to send reply."
+      );
+    } finally {
+      setUpdatingId("");
+    }
+  }
+
   const visibleRequests = requests.filter((item) =>
     role === "Alumni"
-      ? item.alumniId ===
-        (item.alumni?.id ?? item.alumniId)
-      : item.studentId === (item.student?.id ?? item.studentId)
+      ? item.alumniId === item.alumni?.id || item.alumniId
+      : item.studentId === item.student?.id || item.studentId
   );
 
   return (
@@ -123,10 +176,11 @@ export default function RequestsPage() {
         </Link>
 
         <h1 className="mt-5 text-3xl font-bold">Referral requests</h1>
+
         <p className="mt-3 text-slate-600">
           {role === "Alumni"
-            ? "Review connection requests from students."
-            : "Track the referral requests you have sent to alumni."}
+            ? "Review connection requests from students and reply to them."
+            : "Track your referral requests and read replies from alumni."}
         </p>
 
         {error && (
@@ -142,11 +196,13 @@ export default function RequestsPage() {
         ) : visibleRequests.length === 0 ? (
           <div className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
             <h2 className="text-xl font-semibold">No requests yet</h2>
+
             <p className="mt-2 text-slate-600">
               {role === "Alumni"
                 ? "Student referral requests will appear here."
                 : "Visit the alumni directory to find someone to connect with."}
             </p>
+
             {role === "Student" && (
               <Link
                 href="/alumni"
@@ -183,16 +239,85 @@ export default function RequestsPage() {
                     </span>
                   </div>
 
-                  <p className="mt-4 whitespace-pre-wrap text-slate-700">
-                    {item.message}
-                  </p>
+                  <div className="mt-4 rounded-xl bg-slate-50 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      {role === "Alumni" ? "Student's message" : "Your message"}
+                    </p>
+                    <p className="mt-2 whitespace-pre-wrap text-slate-700">
+                      {item.message}
+                    </p>
+                  </div>
+
+                  {role === "Student" && item.reply && (
+                    <div className="mt-4 rounded-xl bg-indigo-50 p-4">
+                      <p className="font-semibold text-indigo-900">
+                        Alumni reply
+                      </p>
+                      <p className="mt-2 whitespace-pre-wrap text-indigo-800">
+                        {item.reply}
+                      </p>
+                    </div>
+                  )}
+
+                  {role === "Alumni" && (
+                    <div className="mt-5 space-y-3 border-t border-slate-100 pt-5">
+                      {item.reply && (
+                        <div className="rounded-xl bg-green-50 p-4">
+                          <p className="font-semibold text-green-900">
+                            Your previous reply
+                          </p>
+                          <p className="mt-2 whitespace-pre-wrap text-green-800">
+                            {item.reply}
+                          </p>
+                        </div>
+                      )}
+
+                      <label
+                        htmlFor={`reply-${item.id}`}
+                        className="block font-semibold text-slate-800"
+                      >
+                        Write a reply to the student
+                      </label>
+
+                      <textarea
+                        id={`reply-${item.id}`}
+                        value={replyDrafts[item.id] ?? ""}
+                        onChange={(event) =>
+                          setReplyDrafts((previous) => ({
+                            ...previous,
+                            [item.id]: event.target.value,
+                          }))
+                        }
+                        maxLength={500}
+                        rows={3}
+                        placeholder="Write your response here..."
+                        className="w-full rounded-xl border border-slate-300 bg-white p-3 text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                      />
+
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <span className="text-sm text-slate-500">
+                          {(replyDrafts[item.id] ?? "").length}/500 characters
+                        </span>
+
+                        <button
+                          onClick={() => void sendReply(item.id)}
+                          disabled={updatingId === item.id}
+                          className="rounded-xl bg-indigo-600 px-5 py-2.5 font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {updatingId === item.id
+                            ? "Sending..."
+                            : item.reply
+                              ? "Update reply"
+                              : "Send reply"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                   {role === "Alumni" && item.status === "Pending" && (
                     <div className="mt-5 flex flex-wrap gap-3">
                       <button
-                        onClick={() =>
-                          void updateRequest(item.id, "Accepted")
-                        }
+                        onClick={() => void updateRequest(item.id, "Accepted")}
                         disabled={updatingId === item.id}
                         className="rounded-xl bg-green-600 px-4 py-2 font-semibold text-white hover:bg-green-700 disabled:opacity-60"
                       >
@@ -200,9 +325,7 @@ export default function RequestsPage() {
                       </button>
 
                       <button
-                        onClick={() =>
-                          void updateRequest(item.id, "Rejected")
-                        }
+                        onClick={() => void updateRequest(item.id, "Rejected")}
                         disabled={updatingId === item.id}
                         className="rounded-xl border border-red-200 px-4 py-2 font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60"
                       >

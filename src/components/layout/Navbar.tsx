@@ -4,6 +4,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import Image from "next/image";
+
+type Theme = "light" | "dark";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -14,6 +17,24 @@ export default function Navbar() {
   const [role, setRole] = useState("");
   const [loggingOut, setLoggingOut] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [theme, setTheme] = useState<Theme>("light");
+
+  // Restore the user's theme preference.
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("gradbridge-theme");
+    const initialTheme: Theme = savedTheme === "dark" ? "dark" : "light";
+
+    setTheme(initialTheme);
+    document.documentElement.dataset.theme = initialTheme;
+  }, []);
+
+  function toggleTheme() {
+    const nextTheme: Theme = theme === "light" ? "dark" : "light";
+
+    setTheme(nextTheme);
+    document.documentElement.dataset.theme = nextTheme;
+    localStorage.setItem("gradbridge-theme", nextTheme);
+  }
 
   useEffect(() => {
     let active = true;
@@ -23,14 +44,12 @@ export default function Navbar() {
         const response = await fetch("/api/auth/me", {
           cache: "no-store",
         });
-
         const data = await response.json();
 
         if (!active) return;
 
         if (response.ok) {
           const user = data.user ?? data;
-
           setLoggedIn(true);
           setName(user.fullName ?? "");
           setRole(user.role ?? "");
@@ -104,41 +123,75 @@ export default function Navbar() {
       : pathname === href || pathname.startsWith(`${href}/`);
   }
 
+  const themeButton = (
+    <button
+      type="button"
+      onClick={toggleTheme}
+      aria-label={`Switch to ${theme === "light" ? "dark" : "light"} theme`}
+      title={`Switch to ${theme === "light" ? "dark" : "light"} theme`}
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-indigo-300 hover:bg-indigo-50"
+    >
+      {theme === "light" ? (
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          className="h-5 w-5"
+          aria-hidden="true"
+        >
+          <circle
+            cx="12"
+            cy="12"
+            r="4"
+            stroke="currentColor"
+            strokeWidth="1.8"
+          />
+          <path
+            d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+        </svg>
+      ) : (
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          className="h-5 w-5"
+          aria-hidden="true"
+        >
+          <path
+            d="M20.5 15.5A8.5 8.5 0 0 1 8.5 3.5 8.5 8.5 0 1 0 20.5 15.5Z"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      )}
+    </button>
+  );
+
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
-      <nav className="mx-auto flex min-h-[76px] max-w-7xl items-center justify-between gap-4 px-5 sm:px-7">
-        <Link
-          href="/"
-          className="flex shrink-0 items-center gap-2.5"
-          aria-label="GradBridge home"
-        >
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-lg shadow-indigo-600/20">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              className="h-6 w-6"
-              aria-hidden="true"
-            >
-              <path
-                d="M2.5 9 12 4l9.5 5L12 14 2.5 9Z"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M6.5 11.2v4.1c3.2 2.5 7.8 2.5 11 0v-4.1M21.5 9v6"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </span>
+      <nav className="mx-auto flex min-h-[76px] max-w-7xl items-center justify-between gap-3 px-4 sm:px-7">
+        
 
-          <span className="text-xl font-extrabold tracking-tight text-slate-900">
-            Grad<span className="text-indigo-600">Bridge</span>
-          </span>
-        </Link>
+<Link
+  href="/"
+  className="flex shrink-0 items-center"
+  aria-label="GradBridge home"
+>
+  <Image
+    src="/gradbridge-logo.png"
+    alt="GradBridge — Connect, Learn, Grow"
+    width={1481}
+    height={438}
+    priority
+    className="h-auto w-[155px] sm:w-[190px]"
+  />
+</Link>
+
+
 
         <div className="hidden items-center gap-1 md:flex">
           {links.map((link) => (
@@ -195,33 +248,37 @@ export default function Navbar() {
           )}
         </div>
 
-        <button
-          type="button"
-          onClick={() => setMenuOpen((open) => !open)}
-          aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"}
-          aria-expanded={menuOpen}
-          className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 md:hidden"
-        >
-          {menuOpen ? (
-            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-              <path
-                d="m6 6 12 12M18 6 6 18"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-            </svg>
-          ) : (
-            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-              <path
-                d="M4 7h16M4 12h16M4 17h16"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-            </svg>
-          )}
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          {themeButton}
+
+          <button
+            type="button"
+            onClick={() => setMenuOpen((open) => !open)}
+            aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"}
+            aria-expanded={menuOpen}
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 md:hidden"
+          >
+            {menuOpen ? (
+              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                <path
+                  d="m6 6 12 12M18 6 6 18"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                <path
+                  d="M4 7h16M4 12h16M4 17h16"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </svg>
+            )}
+          </button>
+        </div>
       </nav>
 
       {menuOpen && (
