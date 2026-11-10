@@ -19,7 +19,6 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [theme, setTheme] = useState<Theme>("light");
 
-  // Restore the user's theme preference.
   useEffect(() => {
     const savedTheme = localStorage.getItem("gradbridge-theme");
     const initialTheme: Theme = savedTheme === "dark" ? "dark" : "light";
@@ -44,6 +43,7 @@ export default function Navbar() {
         const response = await fetch("/api/auth/me", {
           cache: "no-store",
         });
+
         const data = await response.json();
 
         if (!active) return;
@@ -174,24 +174,20 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
       <nav className="mx-auto flex min-h-[76px] max-w-7xl items-center justify-between gap-3 px-4 sm:px-7">
-        
-
-<Link
-  href="/"
-  className="flex shrink-0 items-center"
-  aria-label="GradBridge home"
->
-  <Image
-    src="/gradbridge-logo.png"
-    alt="GradBridge — Connect, Learn, Grow"
-    width={1481}
-    height={438}
-    priority
-    className="h-auto w-[155px] sm:w-[190px]"
-  />
-</Link>
-
-
+        <Link
+          href="/"
+          className="flex shrink-0 items-center"
+          aria-label="GradBridge home"
+        >
+          <Image
+            src="/gradbridge-logo.png"
+            alt="GradBridge — Connect, Learn, Grow"
+            width={1481}
+            height={438}
+            priority
+            className="gb-navbar-logo h-auto w-[155px] sm:w-[190px]"
+          />
+        </Link>
 
         <div className="hidden items-center gap-1 md:flex">
           {links.map((link) => (

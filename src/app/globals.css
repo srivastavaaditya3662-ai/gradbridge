@@ -265,30 +265,6 @@ html[data-theme="dark"] .shadow-2xl {
   --tw-shadow-color: rgb(0 0 0 / 20%);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    scroll-behavior: auto !important;
-    transition-duration: 0.01ms !important;
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-  }
-}
-
-@media (max-width: 640px) {
-  .page-container {
-    width: calc(100% - 28px);
-    padding-block: 24px 44px;
-  }
-
-  .gb-card {
-    padding: 18px;
-    border-radius: 16px;
-  }
-}
-
-
 /* Homepage call-to-action section */
 .gb-cta-section {
   border-radius: 28px;
@@ -319,22 +295,214 @@ html[data-theme="dark"] .gb-cta-card {
   box-shadow: 0 20px 60px rgb(0 0 0 / 15%);
 }
 
-/* Keep the homepage hero heading readable in both themes */
+/* Homepage hero theme support */
 .gb-hero-heading {
   color: #17233f;
+  transition: color 180ms ease;
 }
 
 .gb-hero-highlight {
   color: #4f46e5;
+  transition: color 180ms ease;
 }
 
-/* The hero keeps its light background in dark mode,
-   so its heading must remain dark for good contrast. */
+/* Dark mode: consistent background across the entire hero */
+html[data-theme="dark"] .gb-public-hero {
+  background-color: #0b1120 !important;
+  background-image:
+    radial-gradient(
+      ellipse at 10% 15%,
+      rgb(79 70 229 / 18%),
+      transparent 45%
+    ),
+    radial-gradient(
+      ellipse at 90% 85%,
+      rgb(30 64 175 / 16%),
+      transparent 45%
+    ),
+    linear-gradient(
+      135deg,
+      #0b1120 0%,
+      #111a2d 55%,
+      #101629 100%
+    ) !important;
+}
+
+/* Dark mode hero text */
 html[data-theme="dark"] .gb-hero-heading {
-  color: #17233f !important;
+  color: #f1f5f9 !important;
 }
 
 html[data-theme="dark"] .gb-hero-highlight {
-  color: #4f46e5 !important;
+  color: #818cf8 !important;
 }
 
+/* Improve the hero information card */
+html[data-theme="dark"] .gb-public-hero .bg-white\/90 {
+  background: linear-gradient(
+    145deg,
+    #172338,
+    #141e30
+  ) !important;
+  border-color: #33415c !important;
+  box-shadow: 0 24px 70px rgb(0 0 0 / 30%);
+}
+
+/* Number badges in dark mode */
+html[data-theme="dark"] .gb-public-hero .bg-indigo-100 {
+  background-color: #3730a3 !important;
+}
+
+html[data-theme="dark"] .gb-public-hero .text-indigo-700 {
+  color: #ffffff !important;
+}
+
+/* Navbar logo visibility */
+.gb-navbar-logo {
+  filter: none;
+  opacity: 1;
+}
+
+html[data-theme="dark"] header .gb-navbar-logo {
+  filter: brightness(0) invert(1) !important;
+  opacity: 1 !important;
+}
+
+html[data-theme="light"] header .gb-navbar-logo {
+  filter: none !important;
+  opacity: 1 !important;
+}
+
+/* Smooth theme transitions */
+.gb-public-hero,
+.gb-public-hero h1,
+.gb-public-hero p,
+.gb-public-hero a,
+.gb-public-hero article {
+  transition:
+    background-color 180ms ease,
+    color 180ms ease,
+    border-color 180ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .page-container {
+    width: calc(100% - 28px);
+    padding-block: 24px 44px;
+  }
+
+  .gb-card {
+    padding: 18px;
+    border-radius: 16px;
+  }
+}
+
+
+/* Updated GradBridge CTA section */
+.gb-cta-section {
+  background:
+    radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.08), transparent 35%),
+    radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.08), transparent 35%);
+}
+
+.gb-cta-card {
+  background: linear-gradient(120deg, #ffffff 0%, #f5f3ff 100%);
+  border-color: #e0e7ff;
+}
+
+html[data-theme="dark"] .gb-cta-card {
+  background: linear-gradient(120deg, #141e30 0%, #1b1b38 100%);
+  border-color: #37345f;
+}
+
+html[data-theme="dark"] .gb-cta-card h2,
+html[data-theme="dark"] .gb-cta-card h3 {
+  color: #f8fafc;
+}
+
+html[data-theme="dark"] .gb-cta-card p {
+  color: #cbd5e1;
+}
+
+html[data-theme="dark"] .gb-cta-card .text-slate-700 {
+  color: #e2e8f0;
+}
+
+html[data-theme="dark"] .gb-cta-card .bg-white\/75 {
+  background-color: rgba(30, 41, 59, 0.8);
+  border-color: #3b4260;
+}
+
+html[data-theme="dark"] .gb-cta-card .bg-indigo-100 {
+  background-color: #3730a3;
+}
+
+html[data-theme="dark"] .gb-cta-card .text-indigo-700 {
+  color: #ffffff;
+}
+
+html[data-theme="dark"] .gb-cta-card a.border {
+  border-color: #64748b;
+  color: #e2e8f0;
+}
+
+html[data-theme="dark"] .gb-cta-card a.border:hover {
+  background-color: #312e81;
+  border-color: #818cf8;
+}
+
+
+/* CTA inner card - Light mode */
+.gb-cta-inner-card {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: #e0e7ff;
+}
+
+.gb-cta-inner-card h3 {
+  color: #0f172a;
+}
+
+.gb-cta-inner-card p {
+  color: #475569;
+}
+
+.gb-cta-inner-card a.border {
+  color: #334155;
+  border-color: #cbd5e1;
+}
+
+/* CTA inner card - Dark mode */
+html[data-theme="dark"] .gb-cta-inner-card {
+  background: #202b40 !important;
+  border-color: #475569 !important;
+}
+
+html[data-theme="dark"] .gb-cta-inner-card h3 {
+  color: #ffffff !important;
+}
+
+html[data-theme="dark"] .gb-cta-inner-card p {
+  color: #cbd5e1 !important;
+}
+
+html[data-theme="dark"] .gb-cta-inner-card a.border {
+  background: #29364d;
+  color: #ffffff !important;
+  border-color: #64748b !important;
+}
+
+html[data-theme="dark"] .gb-cta-inner-card a.border:hover {
+  background: #3730a3;
+  border-color: #818cf8 !important;
+}

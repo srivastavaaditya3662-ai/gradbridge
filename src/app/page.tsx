@@ -58,7 +58,7 @@ function SectionTitle({
 function PublicLandingPage() {
   return (
     <>
-      <section className="relative overflow-hidden bg-gradient-to-br from-indigo-50 via-white to-blue-50">
+      <section className="gb-public-hero relative overflow-hidden bg-gradient-to-br from-indigo-50 via-white to-blue-50">
         <div className="pointer-events-none absolute -right-32 -top-24 h-96 w-96 rounded-full bg-indigo-200/40 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-32 -left-24 h-80 w-80 rounded-full bg-blue-200/40 blur-3xl" />
 
@@ -69,15 +69,10 @@ function PublicLandingPage() {
               Your network. Your next opportunity.
             </span>
 
-            
-<h1
-  style={{ color: "#17233f" }}
-  className="mt-7 text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl lg:text-6xl"
->
-  Your next chapter starts with a{" "}
-  <span style={{ color: "#4f46e5" }}>connection.</span>
-</h1>
-
+            <h1 className="gb-hero-heading mt-7 text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
+              Your next chapter starts with a{" "}
+              <span className="gb-hero-highlight">connection.</span>
+            </h1>
 
             <p className="mt-6 max-w-xl text-lg leading-8 text-slate-600">
               Connect with graduates, discover career journeys, and reach
@@ -186,57 +181,70 @@ function PublicLandingPage() {
         </div>
       </section>
 
-      
-<section className="gb-cta-section mx-auto max-w-7xl px-5 pb-20 sm:px-8 lg:px-10">
-  <div className="gb-cta-card relative overflow-hidden rounded-3xl border px-7 py-12 sm:px-12 sm:py-16">
-    <div
-      className="pointer-events-none absolute -right-12 -top-16 h-56 w-56 rounded-full bg-indigo-300/20 blur-3xl"
-      aria-hidden="true"
-    />
-    <div
-      className="pointer-events-none absolute -bottom-20 -left-12 h-56 w-56 rounded-full bg-violet-300/20 blur-3xl"
-      aria-hidden="true"
-    />
+      {/* Updated CTA section */}
+      <section className="gb-cta-section mx-auto max-w-7xl px-5 pb-20 sm:px-8 lg:px-10">
+        <div className="gb-cta-card relative overflow-hidden rounded-3xl border px-7 py-12 sm:px-12 sm:py-14">
+          <div className="pointer-events-none absolute -right-12 -top-16 h-56 w-56 rounded-full bg-indigo-300/20 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-20 -left-12 h-56 w-56 rounded-full bg-violet-300/20 blur-3xl" />
 
-    <div className="relative mx-auto grid max-w-5xl items-center gap-8 md:grid-cols-[1fr_auto] md:gap-12">
-      <div className="text-center md:text-left">
-        <span className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-indigo-700">
-          <span className="h-2 w-2 rounded-full bg-indigo-500" />
-          Your next opportunity starts here
-        </span>
+          <div className="relative grid items-center gap-10 lg:grid-cols-2 lg:gap-14">
+            <div>
+              <p className="mb-4 text-sm font-bold uppercase tracking-[0.2em] text-indigo-600">
+                Connect. Learn. Grow.
+              </p>
 
-        <h2 className="mt-5 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
-          Your network can take you further.
-        </h2>
+              <h2 className="max-w-xl text-3xl font-extrabold leading-tight tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
+                The right connection can change your journey.
+              </h2>
 
-        <p className="mx-auto mt-4 max-w-xl leading-7 text-slate-600 md:mx-0">
-          Meet experienced graduates, learn from their journeys, and build
-          connections that help move your career forward.
-        </p>
-      </div>
+              <p className="mt-6 max-w-xl text-base leading-8 text-slate-600 sm:text-lg">
+                Connect with experienced alumni, gain practical career
+                insights, and discover opportunities that bring your goals
+                closer.
+              </p>
 
-      <div className="flex justify-center md:justify-end">
-        <Link
-          href="/register"
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-3.5 font-bold text-white shadow-lg shadow-indigo-600/20 transition hover:-translate-y-0.5 hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-indigo-500"
-        >
-          Join GradBridge
-          <span aria-hidden="true">→</span>
-        </Link>
-      </div>
-    </div>
-  </div>
-</section>
+              <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-sm font-medium text-slate-700">
+                <span>✓ Learn from alumni</span>
+                <span>✓ Build your network</span>
+                <span>✓ Explore opportunities</span>
+              </div>
+            </div>
 
+            <div className="gb-cta-inner-card rounded-2xl border p-7 shadow-xl shadow-indigo-950/5 backdrop-blur sm:p-9">
+
+              <h3 className="text-2xl font-bold text-slate-900">
+                Be part of GradBridge
+              </h3>
+
+              <p className="mt-3 leading-7 text-slate-600">
+                Your professional network starts here. Take the first step
+                towards meaningful connections and new possibilities.
+              </p>
+
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <Link
+                  href="/register"
+                  className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-6 py-3 font-semibold text-white transition hover:bg-indigo-700"
+                >
+                  Join GradBridge <span className="ml-2">→</span>
+                </Link>
+
+                <Link
+                  href="/alumni"
+                  className="inline-flex items-center justify-center rounded-xl border border-slate-300 px-6 py-3 font-semibold text-slate-700 transition hover:border-indigo-300 hover:bg-indigo-50"
+                >
+                  Explore alumni
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
     </>
   );
 }
 
-function Dashboard({
-  user,
-}: {
-  user: User;
-}) {
+function Dashboard({ user }: { user: User }) {
   const isAlumni = user.role?.toLowerCase() === "alumni";
   const isAdmin = user.role?.toLowerCase() === "admin";
 
@@ -329,9 +337,7 @@ function Dashboard({
         <h2 className="mt-2 text-2xl font-extrabold text-slate-900 sm:text-3xl">
           What would you like to do?
         </h2>
-        <p className="mt-3 text-slate-600">
-          Pick up where you left off.
-        </p>
+        <p className="mt-3 text-slate-600">Pick up where you left off.</p>
       </div>
 
       <div className="mt-6 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
