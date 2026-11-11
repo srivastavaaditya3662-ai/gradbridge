@@ -4,6 +4,20 @@ import { getSessionUserId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export const instant = false;
+
+type AlumniProfileSummary = {
+  company: { name: string } | null;
+  industry: { name: string } | null;
+};
+
+type RecentRequest = {
+  id: string;
+  status: string;
+  createdAt: Date;
+  student: { fullName: string };
+  alumni: { fullName: string };
+};
+
 export default async function AdminPage() {
   const userId = await getSessionUserId();
 
@@ -70,8 +84,17 @@ export default async function AdminPage() {
     return Object.entries(counts).sort((a, b) => b[1] - a[1]);
   };
 
-  const companies = countBy(profiles.map((p) => p.company?.name ?? null));
-  const industries = countBy(profiles.map((p) => p.industry?.name ?? null));
+  const companies = countBy(
+    (profiles as AlumniProfileSummary[]).map(
+      (p) => p.company?.name ?? null
+    )
+  );
+
+  const industries = countBy(
+    (profiles as AlumniProfileSummary[]).map(
+      (p) => p.industry?.name ?? null
+    )
+  );
 
   const StatCard = ({
     label,
@@ -97,7 +120,9 @@ export default async function AdminPage() {
 
     return (
       <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="mb-5 text-lg font-semibold text-slate-900">{title}</h2>
+        <h2 className="mb-5 text-lg font-semibold text-slate-900">
+          {title}
+        </h2>
 
         {items.length === 0 ? (
           <p className="text-sm text-slate-500">
@@ -109,7 +134,9 @@ export default async function AdminPage() {
               <div key={name}>
                 <div className="mb-1 flex justify-between gap-3 text-sm">
                   <span className="truncate text-slate-700">{name}</span>
-                  <span className="font-semibold text-slate-900">{count}</span>
+                  <span className="font-semibold text-slate-900">
+                    {count}
+                  </span>
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-slate-100">
                   <div
@@ -169,7 +196,7 @@ export default async function AdminPage() {
             Recent Referral Requests
           </h2>
 
-          {recentRequests.length === 0 ? (
+          {(recentRequests as RecentRequest[]).length === 0 ? (
             <p className="text-sm text-slate-500">
               No referral requests have been submitted yet.
             </p>
@@ -185,10 +212,14 @@ export default async function AdminPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {recentRequests.map((request) => (
+                  {(recentRequests as RecentRequest[]).map((request) => (
                     <tr key={request.id} className="border-b border-slate-100">
-                      <td className="py-3 pr-4">{request.student.fullName}</td>
-                      <td className="py-3 pr-4">{request.alumni.fullName}</td>
+                      <td className="py-3 pr-4">
+                        {request.student.fullName}
+                      </td>
+                      <td className="py-3 pr-4">
+                        {request.alumni.fullName}
+                      </td>
                       <td className="py-3 pr-4">{request.status}</td>
                       <td className="py-3">
                         {request.createdAt.toLocaleDateString("en-IN")}

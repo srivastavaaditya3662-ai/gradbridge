@@ -1,14 +1,85 @@
 
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
-import {
-  BlobServiceClient,
-} from "@azure/storage-blob";
+import { BlobServiceClient } from "@azure/storage-blob";
+import { createClient } from "@supabase/supabase-js";
 import { prisma } from "@/lib/prisma";
 import { getSessionUserId } from "@/lib/auth";
 
-
 const MAX_FILE_SIZE = 2 * 1024 * 1024;
+
+function getStorageProvider() {
+  const provider = process.env.STORAGE_PROVIDER || "azure";
+
+  if (provider !== "azure" && provider !== "supabase") {
+    throw new Error("Invalid STORAGE_PROVIDER configuration.");
+  }
+
+  return provider;
+}
+
+function getSupabaseStorage() {
+  const url = process.env.SUPABASE_URL;
+  const secretKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const bucket = process.env.SUPABASE_STORAGE_BUCKET;
+
+  if (!url || !secretKey || !bucket) {
+    throw new Error("Supabase Storage configuration is missing.");
+  }
+
+  const supabase = createClient(url, secretKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  });
+
+  return { supabase, bucket };
+}
+
+function getAzureStorage() {
+  const connectionString =
+    process.env.AZURE_STORAGE_CONNECTION_STRING;
+  const containerName =
+    process.env.AZURE_STORAGE_CONTAINER;
+
+  if (!connectionString || !containerName) {
+    throw new Error("Azure Blob Storage configuration is missing.");
+  }
+
+  const blobServiceClient =
+    BlobServiceClient.fromConnectionString(connectionString);
+
+  const containerClient =
+    blobServiceClient.getContainerClient(containerName);
+
+  return { containerClient };
+}
+
+function validateImage(bytes: Buffer, extension: string) {
+  const isJpeg =
+    bytes.length >= 3 &&
+    bytes[0] === 0xff &&
+    bytes[1] === 0xd8 &&
+    bytes[2] === 0xff;
+
+  const isPng =
+    bytes.length >= 8 &&
+    bytes.subarray(0, 8).equals(
+      Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])
+    );
+
+  const isWebp =
+    bytes.length >= 12 &&
+    bytes.toString("ascii", 0, 4) === "RIFF" &&
+    bytes.toString("ascii", 8, 12) === "WEBP";
+
+  return (
+    (extension === "jpg" && isJpeg) ||
+    (extension === "png" && isPng) ||
+    (extension === "webp" && isWebp)
+  );
+}
 
 export async function POST(request: Request) {
   try {
@@ -53,14 +124,16 @@ export async function POST(request: Request) {
       );
     }
 
-    const connectionString =
-      process.env.AZURE_STORAGE_CONNECTION_STRING;
-    const containerName =
-      process.env.AZURE_STORAGE_CONTAINER;
+    const bytes = Buffer.from(await file.arrayBuffer());
 
-    if (!connectionString || !containerName) {
-      throw new Error("Azure Blob Storage configuration is missing.");
+    if (!validateImage(bytes, extension)) {
+      return NextResponse.json(
+        { message: "The selected file is not a valid image." },
+        { status: 400 }
+      );
     }
+
+    const provider = getStorageProvider();
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -79,70 +152,96 @@ export async function POST(request: Request) {
       );
     }
 
-    const blobServiceClient =
-      BlobServiceClient.fromConnectionString(connectionString);
-
-    const containerClient =
-      blobServiceClient.getContainerClient(containerName);
-
     const blobName = `${userId}/${randomUUID()}.${extension}`;
-    const blobClient = containerClient.getBlockBlobClient(blobName);
-    const bytes = Buffer.from(await file.arrayBuffer());
 
-    // Verify actual file signatures, not only the supplied MIME type.
-    const isJpeg =
-      bytes.length >= 3 &&
-      bytes[0] === 0xff &&
-      bytes[1] === 0xd8 &&
-      bytes[2] === 0xff;
+    // SUPABASE STORAGE
+    if (provider === "supabase") {
+      const { supabase, bucket } = getSupabaseStorage();
 
-    const isPng =
-      bytes.length >= 8 &&
-      bytes.subarray(0, 8).equals(
-        Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])
-      );
-
-    const isWebp =
-      bytes.length >= 12 &&
-      bytes.toString("ascii", 0, 4) === "RIFF" &&
-      bytes.toString("ascii", 8, 12) === "WEBP";
-
-    if (
-      (extension === "jpg" && !isJpeg) ||
-      (extension === "png" && !isPng) ||
-      (extension === "webp" && !isWebp)
-    ) {
-      return NextResponse.json(
-        { message: "The selected file is not a valid image." },
-        { status: 400 }
-      );
-    }
-
-    await blobClient.uploadData(bytes, {
-      blobHTTPHeaders: {
-        blobContentType: file.type,
-      },
-    });
-
-    try {
-      await prisma.profile.update({
-        where: { userId },
-        data: { pictureBlobName: blobName },
-      });
-    } catch (error) {
-      await blobClient.deleteIfExists().catch(() => {});
-      throw error;
-    }
-
-    const oldBlobName = user.profile.pictureBlobName;
-
-    if (oldBlobName && oldBlobName !== blobName) {
-      await containerClient
-        .getBlockBlobClient(oldBlobName)
-        .deleteIfExists()
-        .catch((error) => {
-          console.error("Old profile picture cleanup failed:", error);
+      const { error: uploadError } = await supabase.storage
+        .from(bucket)
+        .upload(blobName, bytes, {
+          contentType: file.type,
+          upsert: false,
         });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      try {
+        await prisma.profile.update({
+          where: { userId },
+          data: { pictureBlobName: blobName },
+        });
+      } catch (error) {
+        await supabase.storage
+          .from(bucket)
+          .remove([blobName])
+          .catch(() => {});
+
+        throw error;
+      }
+
+      const oldBlobName = user.profile.pictureBlobName;
+
+      if (oldBlobName && oldBlobName !== blobName) {
+        await supabase.storage
+          .from(bucket)
+          .remove([oldBlobName])
+          .then(({ error }) => {
+            if (error) {
+              console.error(
+                "Old profile picture cleanup failed:",
+                error
+              );
+            }
+          })
+          .catch((error) => {
+            console.error(
+              "Old profile picture cleanup failed:",
+              error
+            );
+          });
+      }
+    }
+
+    // AZURE BLOB STORAGE
+    else {
+      const { containerClient } = getAzureStorage();
+
+      const blobClient =
+        containerClient.getBlockBlobClient(blobName);
+
+      await blobClient.uploadData(bytes, {
+        blobHTTPHeaders: {
+          blobContentType: file.type,
+        },
+      });
+
+      try {
+        await prisma.profile.update({
+          where: { userId },
+          data: { pictureBlobName: blobName },
+        });
+      } catch (error) {
+        await blobClient.deleteIfExists().catch(() => {});
+        throw error;
+      }
+
+      const oldBlobName = user.profile.pictureBlobName;
+
+      if (oldBlobName && oldBlobName !== blobName) {
+        await containerClient
+          .getBlockBlobClient(oldBlobName)
+          .deleteIfExists()
+          .catch((error) => {
+            console.error(
+              "Old profile picture cleanup failed:",
+              error
+            );
+          });
+      }
     }
 
     return NextResponse.json({
@@ -179,41 +278,74 @@ export async function GET() {
     const blobName = user?.profile?.pictureBlobName;
 
     if (!blobName) {
-      return new Response("Profile picture not found", { status: 404 });
+      return new Response("Profile picture not found", {
+        status: 404,
+      });
     }
 
-    const connectionString =
-      process.env.AZURE_STORAGE_CONNECTION_STRING;
-    const containerName =
-      process.env.AZURE_STORAGE_CONTAINER;
+    const provider = getStorageProvider();
 
-    if (!connectionString || !containerName) {
-      throw new Error("Azure Blob Storage configuration is missing.");
+    // SUPABASE STORAGE
+    if (provider === "supabase") {
+      const { supabase, bucket } = getSupabaseStorage();
+
+      const { data, error } = await supabase.storage
+        .from(bucket)
+        .download(blobName);
+
+      if (error || !data) {
+        console.error("Supabase picture download error:", error);
+
+        return new Response("Profile picture not found", {
+          status: 404,
+        });
+      }
+
+      const image = await data.arrayBuffer();
+
+      return new Response(image, {
+        headers: {
+          "Content-Type": data.type || "application/octet-stream",
+          "Cache-Control": "private, no-store",
+          "X-Content-Type-Options": "nosniff",
+        },
+      });
     }
 
-    const blobServiceClient =
-      BlobServiceClient.fromConnectionString(connectionString);
+    // AZURE BLOB STORAGE
+    else {
+      const { containerClient } = getAzureStorage();
 
-    const blobClient = blobServiceClient
-      .getContainerClient(containerName)
-      .getBlockBlobClient(blobName);
+      const blobClient = containerClient
+        .getBlockBlobClient(blobName);
 
-    const download = await blobClient.download();
-    const chunks: Buffer[] = [];
+      const download = await blobClient.download();
 
-    for await (const chunk of download.readableStreamBody!) {
-      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+      if (!download.readableStreamBody) {
+        return new Response("Profile picture not found", {
+          status: 404,
+        });
+      }
+
+      const chunks: Buffer[] = [];
+
+      for await (const chunk of download.readableStreamBody) {
+        chunks.push(
+          Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)
+        );
+      }
+
+      const image = Buffer.concat(chunks);
+
+      return new Response(new Uint8Array(image), {
+        headers: {
+          "Content-Type":
+            download.contentType || "application/octet-stream",
+          "Cache-Control": "private, no-store",
+          "X-Content-Type-Options": "nosniff",
+        },
+      });
     }
-
-    const image = Buffer.concat(chunks);
-
-    return new Response(new Uint8Array(image), {
-      headers: {
-        "Content-Type": download.contentType || "application/octet-stream",
-        "Cache-Control": "private, no-store",
-        "X-Content-Type-Options": "nosniff",
-      },
-    });
   } catch (error) {
     console.error("Profile picture retrieval error:", error);
 
