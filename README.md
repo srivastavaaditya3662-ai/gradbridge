@@ -2,21 +2,24 @@
 
 GradBridge is a full-stack web application designed to bridge the gap between college students and alumni. It provides a common platform where students can connect with alumni, explore career opportunities, seek professional guidance, and request referrals.
 
-Alumni can maintain their professional profiles, share their career information, and respond to students' networking and referral requests.
+Alumni can maintain their professional profiles, share career information, and respond to students' networking and referral requests.
 
 ## Project Overview
 
-The main objective of GradBridge is to strengthen the relationship between students and alumni by providing an organized digital networking platform.
+The main objective of GradBridge is to strengthen relationships between students and alumni by providing an organized digital networking platform.
 
-The application allows students to discover alumni based on their company, industry, skills, and graduation year. It also enables alumni to manage their professional profiles and handle incoming requests.
+The application allows students to discover alumni based on their company, industry, technical skills, and graduation year. It also enables alumni to manage their professional profiles and handle incoming requests.
+
+GradBridge supports multiple cloud providers, including Microsoft Azure and Supabase, offering flexibility in database management and profile picture storage.
 
 ## Key Features
 
 ### 1. User Authentication
 - Student and Alumni registration.
 - Secure login and logout functionality.
-- Password hashing for secure credential storage.
-- Role-based access control.
+- Password hashing using bcrypt.
+- JWT-based authentication using secure cookies.
+- Role-based access control for Student, Alumni, and Admin users.
 
 ### 2. Alumni Profile Management
 - Create and update professional profiles.
@@ -30,6 +33,7 @@ The application allows students to discover alumni based on their company, indus
 - Search alumni by name.
 - Filter alumni based on company and technical skills.
 - Explore professional backgrounds and career information.
+- Find alumni based on graduation year.
 
 ### 4. Referral Request Management
 - Students can send referral or networking requests to alumni.
@@ -39,6 +43,7 @@ The application allows students to discover alumni based on their company, indus
 
 ### 5. Admin Management
 - Role-based administrative access.
+- Admin dashboard.
 - Administrative management of platform information and users.
 
 ## Technology Stack
@@ -48,26 +53,71 @@ The application allows students to discover alumni based on their company, indus
 | Frontend | Next.js, React, TypeScript |
 | Styling | Tailwind CSS |
 | Backend | Next.js API Routes |
-| Database | Microsoft Azure SQL Database |
 | ORM | Prisma |
-| Authentication | Session-based authentication with JWT |
+| Authentication | JWT-based cookie authentication |
 | Password Security | bcrypt |
-| Cloud Storage | Azure Blob Storage |
+| Primary Database Provider | Supabase PostgreSQL |
+| Alternative Database Provider | Microsoft Azure SQL Database |
+| Primary Cloud Storage | Supabase Storage |
+| Alternative Cloud Storage | Azure Blob Storage |
 | Deployment | Vercel |
 | Version Control | Git and GitHub |
+
+## Cloud Integration
+
+GradBridge implements a provider-based cloud architecture that supports both Microsoft Azure and Supabase.
+
+### 1. Microsoft Azure Integration
+
+**Azure SQL Database**
+- Stores structured application data, including user accounts, roles, alumni profiles, company information, industries, and referral requests.
+- Uses Prisma ORM to communicate with the SQL Server database.
+- Maintains relationships and data integrity through relational database constraints.
+
+**Azure Blob Storage**
+- Provides cloud-based storage for alumni profile pictures.
+- Stores image files separately from relational database records.
+- The database stores the corresponding image reference.
+
+### 2. Supabase Integration
+
+**Supabase PostgreSQL**
+- Provides relational database functionality for application data.
+- Stores user information, authentication-related records, alumni profiles, and referral requests.
+- Connects through Prisma ORM using PostgreSQL database connections.
+
+**Supabase Storage**
+- Stores and manages alumni profile pictures.
+- Provides cloud object storage integrated with the Supabase project.
+- Keeps profile images separate from structured database records.
+
+### 3. Provider Selection
+
+The application uses environment variables to select the database and storage providers.
+
+| Configuration | Azure | Supabase |
+|---|---|---|
+| Database Provider | `sqlserver` | `postgresql` |
+| Storage Provider | `azure` | `supabase` |
+| Database | Azure SQL Database | Supabase PostgreSQL |
+| File Storage | Azure Blob Storage | Supabase Storage |
+
+This approach allows the application to switch between supported cloud providers without changing its core application features.
 
 ## System Architecture
 
 GradBridge follows a three-tier architecture.
 
-1. **Presentation Layer:** Next.js and React provide the user interface.
-2. **Application Layer:** Next.js API routes handle authentication, business logic, alumni profiles, and referral requests.
-3. **Data Layer:** Prisma communicates with Azure SQL Database, while Azure Blob Storage stores profile pictures.
+**Presentation Layer:** Next.js and React provide the user interface.
+
+**Application Layer:** Next.js API routes handle authentication, business logic, alumni profiles, directory searches, and referral requests.
+
+**Data Layer:** Prisma ORM communicates with the selected relational database provider, while the selected cloud storage provider stores profile pictures.
 
 ### Architecture Flow
 
 ```text
-        Students / Alumni / Admin
+       Students / Alumni / Admin
                   |
                   v
           Next.js Frontend
@@ -83,13 +133,21 @@ GradBridge follows a three-tier architecture.
           +-------+-------+
           |               |
           v               v
-      Azure SQL       Azure Blob
-      Database         Storage
+   Database Provider   Storage Provider
           |               |
-          v               v
-    User and Profile   Profile Images
-       Records
+     +----+----+      +---+----------+
+     |         |      |              |
+     v         v      v              v
+ Azure SQL  Supabase Azure Blob   Supabase
+ Database   PostgreSQL Storage    Storage
+     |         |      |              |
+     +----+----+      +------+-------+
+          |                  |
+     User, Profile,      Profile Images
+     Request Records
 ```
+
+*The diagram represents the supported provider alternatives. The application selects the configured database and storage provider through environment variables; it does not require both providers to run simultaneously.*
 
 ## Database Design
 
@@ -105,17 +163,21 @@ The main database entities include:
 
 The database uses primary keys, foreign keys, and relational constraints to maintain data integrity.
 
-The database schema is designed with normalization principles to reduce redundancy and improve data consistency.
+The database schema follows normalization principles to reduce redundancy and improve data consistency.
+
+Prisma ORM manages database operations and supports the application's database provider configurations.
 
 ## Security Features
 
-- Passwords are hashed before being stored.
+- Passwords are hashed using bcrypt before being stored.
 - Role-based access control for different user roles.
 - Protected API routes.
-- Secure session handling.
+- JWT-based authentication using cookies.
 - Environment variables for sensitive configuration.
 - Database access through Prisma ORM.
 - Input validation and sanitization.
+- Secure cloud service credentials.
+- HTTPS through the deployed application platform.
 
 ## Project Setup and Installation
 
@@ -129,8 +191,8 @@ Install the following:
 - npm
 - Git
 - Visual Studio Code (recommended)
-- Access to an Azure SQL Database
-- Access to Azure Blob Storage
+- Access to either Azure SQL Database or Supabase PostgreSQL.
+- Access to either Azure Blob Storage or Supabase Storage.
 
 ### 1. Clone the Repository
 
@@ -152,41 +214,83 @@ npm install
 
 ### 4. Configure Environment Variables
 
-Create a `.env` file in the root directory and configure the required environment variables.
+Create a `.env` file in the root directory.
+
+**Option A: Supabase Configuration**
 
 ```env
+DATABASE_PROVIDER="postgresql"
+SUPABASE_DATABASE_URL="YOUR_SUPABASE_TRANSACTION_POOLER_URL"
+SUPABASE_DIRECT_URL="YOUR_SUPABASE_SESSION_POOLER_URL"
+
+STORAGE_PROVIDER="supabase"
+SUPABASE_URL="YOUR_SUPABASE_PROJECT_URL"
+SUPABASE_SERVICE_ROLE_KEY="YOUR_SUPABASE_SERVICE_ROLE_KEY"
+SUPABASE_STORAGE_BUCKET="profile-pictures"
+
+JWT_SECRET="YOUR_SECRET_KEY"
+```
+
+**Option B: Azure Configuration**
+
+```env
+DATABASE_PROVIDER="sqlserver"
 DATABASE_URL="YOUR_AZURE_SQL_CONNECTION_STRING"
 
+STORAGE_PROVIDER="azure"
 AZURE_STORAGE_CONNECTION_STRING="YOUR_AZURE_STORAGE_CONNECTION_STRING"
-
 AZURE_STORAGE_CONTAINER="YOUR_CONTAINER_NAME"
 
 JWT_SECRET="YOUR_SECRET_KEY"
 ```
 
-Replace the placeholder values with your actual configuration.
+Replace the placeholder values with the actual credentials for your selected providers. Use the exact environment variable names expected by the application's Azure and Supabase implementations.
 
-**Important:** Never commit your `.env` file or expose database credentials and secret keys publicly.
+**Important:** Never commit your `.env` file or expose database credentials, service-role keys, storage connection strings, or secret keys publicly.
 
 ### 5. Validate the Prisma Schema
 
+For Supabase PostgreSQL:
+
 ```bash
-npx prisma validate
+npx prisma validate --schema=prisma/schema.postgres.prisma
+```
+
+For Azure SQL Database:
+
+```bash
+npx prisma validate --schema=prisma/schema.prisma
 ```
 
 ### 6. Generate Prisma Client
 
+For Supabase PostgreSQL:
+
 ```bash
-npx prisma generate
+npx prisma generate --schema=prisma/schema.postgres.prisma
+```
+
+For Azure SQL Database:
+
+```bash
+npx prisma generate --schema=prisma/schema.prisma
 ```
 
 ### 7. Set Up Database Tables
 
+For Supabase PostgreSQL:
+
 ```bash
-npx prisma db push
+npx prisma db push --schema=prisma/schema.postgres.prisma
 ```
 
-This synchronizes the Prisma schema with the configured Azure SQL Database.
+For Azure SQL Database:
+
+```bash
+npx prisma db push --schema=prisma/schema.prisma
+```
+
+These commands synchronize the selected Prisma schema with the configured database.
 
 ### 8. Start the Development Server
 
@@ -213,25 +317,29 @@ Deployment process:
 5. Deploy the Next.js application.
 6. Test the deployed application.
 
-The application uses Azure SQL Database and Azure Blob Storage as external cloud services.
+The application supports Azure and Supabase cloud services through provider-based environment configuration.
 
 ## Project Status
 
-**Current Status:** Development Completed – Integration and Testing
+**Current Status: Completed and Deployed**
 
 Completed milestones:
 
 - Frontend and backend integration.
 - Student and Alumni authentication.
+- Role-based access control.
 - Alumni profile management.
 - Searchable alumni directory.
-- Referral request management.
-- Azure SQL Database integration.
-- Azure Blob Storage integration.
+- Referral and networking request management.
+- Admin dashboard.
+- Azure SQL Database provider implementation.
+- Azure Blob Storage provider implementation.
+- Supabase PostgreSQL integration.
+- Supabase Storage integration.
 - Vercel deployment.
 - Testing of major application functionalities.
 
-Further UI improvements and final testing may be carried out as part of ongoing project refinement.
+The application supports both Azure and Supabase integrations, with the active providers selected through environment variables.
 
 ## Future Enhancements
 
@@ -244,10 +352,10 @@ Further UI improvements and final testing may be carried out as part of ongoing 
 
 ## Author
 
-Aditya Srivastava
+**Aditya Srivastava**
 
 B.Tech – Computer Science and Engineering  
-Artificial Intelligence and Machine Learning-1
+Artificial Intelligence and Machine Learning
 
 ## Repository
 
