@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 export const instant = false;
 export async function GET(request: NextRequest) {
   try {
-    const params = request.nextUrl.searchParams;
+    const params = new URL(request.url).searchParams;
     const search = params.get("search")?.trim();
     const company = params.get("company")?.trim();
     const skill = params.get("skill")?.trim();
