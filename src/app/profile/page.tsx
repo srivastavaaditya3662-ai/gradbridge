@@ -30,6 +30,12 @@ const emptyForm: ProfileForm = {
   careerGoals: "",
 };
 
+const labelClass =
+  "mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200";
+
+const inputClass =
+  "w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder:text-gray-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-400 dark:focus:border-indigo-400 dark:focus:ring-indigo-900";
+
 export default function ProfilePage() {
   const router = useRouter();
 
@@ -222,7 +228,9 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <main className="mx-auto max-w-3xl px-4 py-12">
-        <p className="text-gray-600">Loading your profile...</p>
+        <p className="text-gray-600 dark:text-gray-300">
+          Loading your profile...
+        </p>
       </main>
     );
   }
@@ -230,13 +238,15 @@ export default function ProfilePage() {
   return (
     <main className="mx-auto max-w-3xl px-4 py-10">
       <div className="mb-8">
-        <p className="text-sm font-semibold uppercase tracking-wider text-indigo-600">
+        <p className="text-sm font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
           GradBridge
         </p>
-        <h1 className="mt-2 text-3xl font-bold text-gray-900">
+
+        <h1 className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">
           My Profile
         </h1>
-        <p className="mt-2 text-gray-600">
+
+        <p className="mt-2 text-gray-600 dark:text-gray-300">
           Keep your academic and career information up to date.
         </p>
       </div>
@@ -244,7 +254,7 @@ export default function ProfilePage() {
       {message && (
         <div
           role="status"
-          className="mb-5 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800"
+          className="mb-5 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-300"
         >
           {message}
         </div>
@@ -253,19 +263,19 @@ export default function ProfilePage() {
       {error && (
         <div
           role="alert"
-          className="mb-5 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+          className="mb-5 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300"
         >
           {error}
         </div>
       )}
 
-      <section className="mb-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-xl font-semibold text-gray-900">
+      <section className="mb-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+        <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">
           Profile picture
         </h2>
 
         <div className="flex flex-col items-start gap-5 sm:flex-row sm:items-center">
-          <div className="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-full bg-indigo-100 text-3xl font-bold text-indigo-700">
+          <div className="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-full bg-indigo-100 text-3xl font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
             {preview ? (
               <img
                 src={preview}
@@ -285,10 +295,7 @@ export default function ProfilePage() {
           </div>
 
           <div className="w-full">
-            <label
-              htmlFor="picture"
-              className="mb-2 block text-sm font-medium text-gray-700"
-            >
+            <label htmlFor="picture" className={labelClass}>
               Choose an image
             </label>
 
@@ -298,10 +305,10 @@ export default function ProfilePage() {
               accept="image/jpeg,image/png,image/webp"
               onChange={choosePicture}
               disabled={uploading}
-              className="block w-full text-sm text-gray-600 file:mr-4 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-4 file:py-2 file:font-medium file:text-indigo-700 hover:file:bg-indigo-100"
+              className="block w-full text-sm text-gray-600 file:mr-4 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-4 file:py-2 file:font-medium file:text-indigo-700 hover:file:bg-indigo-100 dark:text-gray-300 dark:file:bg-indigo-950 dark:file:text-indigo-300 dark:hover:file:bg-indigo-900"
             />
 
-            <p className="mt-2 text-xs text-gray-500">
+            <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
               JPG, PNG, or WebP. Maximum size: 2 MB.
             </p>
 
@@ -319,14 +326,14 @@ export default function ProfilePage() {
 
       <form
         onSubmit={saveProfile}
-        className="space-y-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm"
+        className="space-y-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900"
       >
-        <h2 className="text-xl font-semibold text-gray-900">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
           Personal and career information
         </h2>
 
         <div>
-          <label htmlFor="fullName" className="mb-2 block text-sm font-medium text-gray-700">
+          <label htmlFor="fullName" className={labelClass}>
             Full name
           </label>
           <input
@@ -336,38 +343,38 @@ export default function ProfilePage() {
             onChange={updateField}
             required
             maxLength={100}
-            className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+            className={inputClass}
           />
         </div>
 
         <div className="grid gap-5 sm:grid-cols-2">
           <div>
-            <label htmlFor="email" className="mb-2 block text-sm font-medium text-gray-700">
+            <label htmlFor="email" className={labelClass}>
               Email
             </label>
             <input
               id="email"
               value={form.email}
               readOnly
-              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-gray-600"
+              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
             />
           </div>
 
           <div>
-            <label htmlFor="role" className="mb-2 block text-sm font-medium text-gray-700">
+            <label htmlFor="role" className={labelClass}>
               Account role
             </label>
             <input
               id="role"
               value={form.role}
               readOnly
-              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-gray-600"
+              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
             />
           </div>
         </div>
 
         <div>
-          <label htmlFor="graduationYear" className="mb-2 block text-sm font-medium text-gray-700">
+          <label htmlFor="graduationYear" className={labelClass}>
             Graduation year
           </label>
           <input
@@ -379,14 +386,14 @@ export default function ProfilePage() {
             value={form.graduationYear}
             onChange={updateField}
             required
-            className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+            className={inputClass}
           />
         </div>
 
         {form.role === "Alumni" && (
           <>
             <div>
-              <label htmlFor="jobTitle" className="mb-2 block text-sm font-medium text-gray-700">
+              <label htmlFor="jobTitle" className={labelClass}>
                 Current job title
               </label>
               <input
@@ -396,13 +403,13 @@ export default function ProfilePage() {
                 onChange={updateField}
                 maxLength={150}
                 placeholder="e.g. Software Engineer"
-                className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                className={inputClass}
               />
             </div>
 
             <div className="grid gap-5 sm:grid-cols-2">
               <div>
-                <label htmlFor="company" className="mb-2 block text-sm font-medium text-gray-700">
+                <label htmlFor="company" className={labelClass}>
                   Company
                 </label>
                 <input
@@ -412,12 +419,12 @@ export default function ProfilePage() {
                   onChange={updateField}
                   maxLength={150}
                   placeholder="e.g. Microsoft"
-                  className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                  className={inputClass}
                 />
               </div>
 
               <div>
-                <label htmlFor="industry" className="mb-2 block text-sm font-medium text-gray-700">
+                <label htmlFor="industry" className={labelClass}>
                   Industry
                 </label>
                 <input
@@ -427,13 +434,13 @@ export default function ProfilePage() {
                   onChange={updateField}
                   maxLength={100}
                   placeholder="e.g. Technology"
-                  className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                  className={inputClass}
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="techStack" className="mb-2 block text-sm font-medium text-gray-700">
+              <label htmlFor="techStack" className={labelClass}>
                 Skills and tech stack
               </label>
               <textarea
@@ -444,14 +451,14 @@ export default function ProfilePage() {
                 maxLength={500}
                 rows={3}
                 placeholder="e.g. Python, React, SQL, Azure"
-                className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                className={inputClass}
               />
             </div>
           </>
         )}
 
         <div>
-          <label htmlFor="bio" className="mb-2 block text-sm font-medium text-gray-700">
+          <label htmlFor="bio" className={labelClass}>
             About me
           </label>
           <textarea
@@ -462,13 +469,13 @@ export default function ProfilePage() {
             maxLength={1000}
             rows={4}
             placeholder="Introduce yourself..."
-            className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+            className={inputClass}
           />
         </div>
 
         {form.role === "Student" && (
           <div>
-            <label htmlFor="careerGoals" className="mb-2 block text-sm font-medium text-gray-700">
+            <label htmlFor="careerGoals" className={labelClass}>
               Career goals
             </label>
             <textarea
@@ -479,7 +486,7 @@ export default function ProfilePage() {
               maxLength={1000}
               rows={3}
               placeholder="What roles or skills are you working toward?"
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+              className={inputClass}
             />
           </div>
         )}
