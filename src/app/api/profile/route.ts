@@ -4,6 +4,11 @@ import type { Prisma as PostgresPrisma } from "@/generated/postgres";
 import { prisma } from "@/lib/prisma";
 import { getSessionUserId } from "@/lib/auth";
 
+const transactionOptions = {
+  maxWait: 10000,
+  timeout: 15000,
+};
+
 export async function GET() {
   try {
     const userId = await getSessionUserId();
@@ -58,11 +63,10 @@ export async function PUT(request: Request) {
 
     const body = await request.json();
 
-    const fullName =
-      typeof body.fullName === "string"
-        ? body.fullName.trim()
-        : "";
+    const cleanString = (value: unknown): string =>
+      typeof value === "string" ? value.trim() : "";
 
+    const fullName = cleanString(body.fullName);
     const graduationYear = Number(body.graduationYear);
 
     if (
@@ -74,6 +78,19 @@ export async function PUT(request: Request) {
     ) {
       return NextResponse.json(
         { message: "Enter a valid name and graduation year." },
+        { status: 400 }
+      );
+    }
+
+    const bio = cleanString(body.bio);
+    const careerGoals = cleanString(body.careerGoals);
+
+    if (bio.length > 1000 || careerGoals.length > 1000) {
+      return NextResponse.json(
+        {
+          message:
+            "Bio and career goals must be 1000 characters or fewer.",
+        },
         { status: 400 }
       );
     }
@@ -90,31 +107,9 @@ export async function PUT(request: Request) {
       );
     }
 
-    const cleanString = (value: unknown): string =>
-      typeof value === "string" ? value.trim() : "";
-
-    const bio = cleanString(body.bio);
-    const careerGoals = cleanString(body.careerGoals);
-
-    if (bio.length > 1000 || careerGoals.length > 1000) {
-      return NextResponse.json(
-        {
-          message:
-            "Bio and career goals must be 1000 characters or fewer.",
-        },
-        { status: 400 }
-      );
-    }
-
-    let jobTitle: string | null = null;
-    let techStack = "";
-    let companyId: string | null = null;
-    let industryId: string | null = null;
-
     if (currentUser.role === "Alumni") {
-      jobTitle = cleanString(body.jobTitle) || null;
-      techStack = cleanString(body.techStack);
-
+      const jobTitle = cleanString(body.jobTitle) || null;
+      const techStack = cleanString(body.techStack);
       const companyName = cleanString(body.company);
       const industryName = cleanString(body.industry);
 
@@ -148,9 +143,6 @@ export async function PUT(request: Request) {
               })
             : null;
 
-          companyId = company?.id ?? null;
-          industryId = industry?.id ?? null;
-
           await tx.user.update({
             where: { id: userId },
             data: { fullName },
@@ -161,8 +153,8 @@ export async function PUT(request: Request) {
             update: {
               graduationYear,
               jobTitle,
-              companyId,
-              industryId,
+              companyId: company?.id ?? null,
+              industryId: industry?.id ?? null,
               techStack,
               bio,
               careerGoals: "",
@@ -171,8 +163,8 @@ export async function PUT(request: Request) {
               userId,
               graduationYear,
               jobTitle,
-              companyId,
-              industryId,
+              companyId: company?.id ?? null,
+              industryId: industry?.id ?? null,
               techStack,
               bio,
               careerGoals: "",
@@ -182,7 +174,8 @@ export async function PUT(request: Request) {
               industry: true,
             },
           });
-        }
+        },
+        transactionOptions
       );
 
       return NextResponse.json({
@@ -221,7 +214,8 @@ export async function PUT(request: Request) {
               careerGoals,
             },
           });
-        }
+        },
+        transactionOptions
       );
 
       return NextResponse.json({
